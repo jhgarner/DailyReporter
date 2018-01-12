@@ -9,5 +9,3 @@ someFunc :: IO ()
 someFunc = do
   weather <- weatherHTML
   putStrLn weather
-
-

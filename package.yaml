@@ -22,13 +22,14 @@ description:         Please see the README on Github at <https://github.com/gith
 dependencies:
 - base >= 4.7 && < 5
 - aeson
-- aeson-lens
+- lens-aeson
 - http-conduit
 - bytestring
 - text
 - stringsearch
 - time
 - old-locale
+- lens
 
 library:
   source-dirs: src
