@@ -26,10 +26,10 @@ dependencies:
 - http-conduit
 - bytestring
 - text
-- stringsearch
 - time
-- old-locale
 - lens
+- scalpel
+- feed
 
 library:
   source-dirs: src
