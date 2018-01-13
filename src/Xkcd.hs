@@ -11,34 +11,31 @@ import Text.Feed.Query
 import Text.Feed.Util
 import Text.Feed.Types
 import Data.Time.LocalTime
+import Data.Time.Clock
 import Data.Char
 import Data.Maybe
 import Text.HTML.Scalpel
 
 xkcdHTML :: IO String
 xkcdHTML = do
-  itemM <- parse  
-  case itemM of
-    Just item -> 
-      case (getItemTitle item, getItemSummary item) of
-        (Just t, Just s) ->
-          return $ "<div align=\"center\"><h2>" ++ t
-          ++ "</h2></div>\n<div align=\"center\"><a href=\"https://xkcd.com\">" 
-          ++ s ++ "</a><br>" ++ scrapeAlt s ++ "</div>\n<div align=\"center\">"
-          ++ "<a href=\"https://explainxkcd.com\">confused?</a></div>"
-        _ -> return ""
-    Nothing -> return ""
-
--- TODO make this recover from errors better.
-parse :: IO (Maybe Item)
-parse = do
   xml <- xkcdXML
-  let Just feed = parseFeedSource xml
-  let Just update = getFeedDate feed
   currentTime <- zonedTimeToUTC <$> getZonedTime
+  return . fromMaybe "" $ do
+    item <- parse xml currentTime
+    title <- getItemTitle item
+    summary <- getItemSummary item
+    Just $ "<div align=\"center\"><h2>" ++ title
+      ++ "</h2></div>\n<div align=\"center\"><a href=\"https://xkcd.com\">" 
+      ++ summary ++ "</a><br>" ++ scrapeAlt summary ++ "</div>\n<div align=\"center\">"
+      ++ "<a href=\"https://explainxkcd.com\">confused?</a></div>"
+
+parse :: B.ByteString -> UTCTime -> Maybe Item
+parse xml currentTime = do
+  feed <- parseFeedSource xml
+  update <- getFeedDate feed
   let time = mkNumber . toFeedDateStringUTC AtomKind $ currentTime
   let pubTime = mkNumber update
-  return $ if time - 240000 < pubTime then Just (head . feedItems $ feed) else Nothing
+  if time - 240000 < pubTime then Just (head . feedItems $ feed) else Nothing
 
 xkcdXML :: IO B.ByteString
 xkcdXML = simpleHttp "http://xkcd.com/atom.xml"
