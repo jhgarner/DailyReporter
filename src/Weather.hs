@@ -18,37 +18,38 @@ import Control.Lens
 weatherHTML :: IO String
 weatherHTML = do
   weather <- response
-  let (Just (String currently)) = weather ^? key "currently" . key "summary"
-  let (Just (Number currentTemp)) = weather ^? key "currently" . key "apparentTemperature"
+  return . fromMaybe "Error getting weather" $ do
+    String currently <- weather ^? key "currently" . key "summary"
+    Number currentTemp <- weather ^? key "currently" . key "apparentTemperature"
 
-  let (Just (String summary)) = weather ^? key "daily" . key "summary"
-  let (Just dayData) = weather ^? key "daily" . key "data" . nth 0
-  let (Just (Number tempHigh)) = dayData ^? key "temperatureHigh"
-  let (Just (Number tempHighTime)) = dayData ^? key "temperatureHighTime"
-  let (Just (Number tempLow)) = dayData ^? key "temperatureLow"
-  let (Just (Number tempLowTime)) = dayData ^? key "temperatureLowTime"
-  let (Just (Number precipProb)) = dayData ^? key "precipProbability"
-  let (Just (Number precipInt)) = dayData ^? key "precipIntensity"
-  let (Just (Number precipIntMax)) = dayData ^? key "precipIntensityMax"
-  let (Just (Number precipIntMaxTime)) = dayData ^? key "precipIntensityMaxTime"
-  let (Just (String nowSummary)) = dayData ^? key "summary"
+    String summary <- weather ^? key "daily" . key "summary"
+    dayData <- weather ^? key "daily" . key "data" . nth 0
+    Number tempHigh <- dayData ^? key "temperatureHigh"
+    Number tempHighTime <- dayData ^? key "temperatureHighTime"
+    Number tempLow <- dayData ^? key "temperatureLow"
+    Number tempLowTime <- dayData ^? key "temperatureLowTime"
+    Number precipProb <- dayData ^? key "precipProbability"
+    Number precipInt <- dayData ^? key "precipIntensity"
+    Number precipIntMax <- dayData ^? key "precipIntensityMax"
+    Number precipIntMaxTime <- dayData ^? key "precipIntensityMaxTime"
+    String nowSummary <- dayData ^? key "summary"
 
-  let tht = formatTime defaultTimeLocale "%H:%M" 
-            $ posixSecondsToUTCTime (realToFrac tempHighTime)
-  let tlt = formatTime defaultTimeLocale "%H:%M" 
-            $ posixSecondsToUTCTime (realToFrac tempLowTime)
-  let pimt = formatTime defaultTimeLocale "%H:%M" 
-             $ posixSecondsToUTCTime (realToFrac precipIntMaxTime)
+    let tht = formatTime defaultTimeLocale "%H:%M" 
+              $ posixSecondsToUTCTime (realToFrac tempHighTime)
+    let tlt = formatTime defaultTimeLocale "%H:%M" 
+              $ posixSecondsToUTCTime (realToFrac tempLowTime)
+    let pimt = formatTime defaultTimeLocale "%H:%M" 
+              $ posixSecondsToUTCTime (realToFrac precipIntMaxTime)
 
-  return $ "<meta charset=\"utf-8\"/><div align = \"center\">\n<h3>Weather Report:</h3>Summary: <b>"
-    ++ unpack summary ++ "</b> <br>Max Apparent Temperature: <b>" ++ show tempHigh 
-    ++ "</b> at " ++ tht ++ "<br>Min Apparent Temperature: <b>" ++ show tempLow 
-    ++ "</b> at " ++ tlt ++ "<br>Precipitation Intensity: <b>" ++ show precipInt 
-    ++ "</b> inches per hour. <br>Max Intensity: <b>" ++ show precipIntMax
-    ++ "</b> at " ++ pimt ++ "<br>Probability of Precipitation: <b>" 
-    ++ show precipProb ++ "</b> <br>Currently: <b>" ++ unpack currently 
-    ++ "</b> <br>Current Temperature: <b>" ++ show currentTemp 
-    ++ "</b><br><br>Rest of the week: " ++ unpack nowSummary ++ "</div>"
+    Just $ "<meta charset=\"utf-8\"/><div align = \"center\">\n<h3>Weather Report:</h3>Summary: <b>"
+      ++ unpack summary ++ "</b> <br>Max Apparent Temperature: <b>" ++ show tempHigh 
+      ++ "</b> at " ++ tht ++ "<br>Min Apparent Temperature: <b>" ++ show tempLow 
+      ++ "</b> at " ++ tlt ++ "<br>Precipitation Intensity: <b>" ++ show precipInt 
+      ++ "</b> inches per hour. <br>Max Intensity: <b>" ++ show precipIntMax
+      ++ "</b> at " ++ pimt ++ "<br>Probability of Precipitation: <b>" 
+      ++ show precipProb ++ "</b> <br>Currently: <b>" ++ unpack currently 
+      ++ "</b> <br>Current Temperature: <b>" ++ show currentTemp 
+      ++ "</b><br><br>Rest of the week: " ++ unpack nowSummary ++ "</div>"
 
 -- |Grabs the json from the url
 response :: IO B.ByteString

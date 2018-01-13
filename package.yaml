@@ -30,6 +30,7 @@ dependencies:
 - lens
 - scalpel
 - feed
+- stringsearch
 
 library:
   source-dirs: src
