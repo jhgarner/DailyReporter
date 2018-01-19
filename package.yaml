@@ -31,6 +31,7 @@ dependencies:
 - scalpel
 - feed
 - stringsearch
+- system-locale
 
 library:
   source-dirs: src
