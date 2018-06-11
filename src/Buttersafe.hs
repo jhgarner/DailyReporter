@@ -1,43 +1,42 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Buttersafe
-    ( butterHtml
-    ) where
+  ( butterHtml
+  ) where
 
 import qualified Data.ByteString.Lazy as B
-import Network.HTTP.Conduit (simpleHttp)
-import Text.HTML.Scalpel
-import Data.Time.LocalTime
+import Data.Map
+import Data.Text
 import Data.Time.Clock
 import Data.Time.Format
+import Data.Time.LocalTime
+import Network.HTTP.Conduit (simpleHttp)
 import System.Locale.Read
+import Text.HTML.Scalpel
+import Utils
 
-data Butter = Butter 
-    { img :: String, title :: String, quote :: String }
+data Butter = Butter
+  { img :: Text
+  , title :: Text
+  , quote :: Text
+  }
 
-butterHtml :: IO String
-butterHtml = do 
-  time <- zonedTimeToUTC <$> getZonedTime
+butterHtml :: IO Text
+butterHtml = do
+  (title, _) <-
+    getTitleAndSummary "http://feeds.feedburner.com/Buttersafe?format=xml"
   Just comic <- butterComicScraper
-  locale <- getCurrentLocale
-  let (Butter img title quote) = if isRightDay (formatTime locale "%A" time) then comic else Butter "" "" ""
-  return $ "<center><h2>" ++ title ++ "</h2><br><img src=\"" 
-    ++ img ++ "\"><br><p>" ++ quote ++ "</p></center>"
+  return . template htmlS $
+    fromList [("*title", title), ("*img", img comic), ("*quote", quote comic)]
 
-butterResponse :: IO B.ByteString
-butterResponse = simpleHttp "http://buttersafe.com" 
+htmlS = "<center><h2>*title</h2<br><img src=\"*img\"><br><p>*quote</p></center>"
 
 butterComicScraper :: IO (Maybe Butter)
 butterComicScraper = scrapeURL "http://buttersafe.com" scraper
 
 scraper :: Scraper String Butter
-scraper = do 
+scraper = do
   title <- chroot ("h2" @: [hasClass "index-title"]) $ text "a"
   img <- chroot ("div" @: ["id" @= "comic"]) $ attr "src" "img"
   quote <- chroot ("div" @: [hasClass "entry"]) $ innerHTML anySelector
-  return $ Butter img title quote
-
-isRightDay :: String -> Bool
-isRightDay "Tuesday" = True
-isRightDay "Thursday" = True
-isRightDay _ = False
+  return $ Butter (pack img) (pack title) (pack quote)

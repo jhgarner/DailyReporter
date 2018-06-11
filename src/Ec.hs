@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Xkcd
-  ( xkcdHTML
+module Ec
+  ( ecHTML
   ) where
 
 import qualified Data.ByteString.Lazy as B
@@ -19,19 +19,16 @@ import Text.Feed.Util
 import Text.HTML.Scalpel
 import Utils
 
-xkcdHTML :: IO Text
-xkcdHTML = do
-  (title, summary) <- getTitleAndSummary "https://xkcd.com/atom.xml"
+ecHTML :: IO Text
+ecHTML = do
+  (title, summary) <- getTitleAndSummary "https://existentialcomics.com/rss.xml"
+  let fixedSummary = replace "//" "http://" summary
   return . template htmlS $
     fromList
-      [("*title", title), ("*summary", summary), ("*alt", scrapeAlt summary)]
+      [("*title", title), ("*summary", fixedSummary)]
 
 htmlS :: Text
 htmlS =
   pack $
   "<div align=\"center\"><h2>*title</h2></div>\n<div align=\"center\">" ++
-  "<a href=\"https://xkcd.com\">*summary</a><br>*alt</div><br>" ++
-  "<div align=\"center\"><a href=\"https://explainxkcd.com\">confused?</a></div>"
-
-scrapeAlt :: Text -> Text
-scrapeAlt s = fromMaybe "" (scrapeStringLike s . attr "alt" $ "img")
+  "<a href=\"https://xkcd.com\">*summary</a> <p>*alt</p></div><br>"

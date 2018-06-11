@@ -1,28 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Smbc
-    ( smbcHTML
-    ) where
+  ( smbcHTML
+  ) where
 
-import Network.HTTP.Conduit (simpleHttp)
 import qualified Data.ByteString.Lazy as B
+import Data.Map
+import Data.Maybe
+import Data.Text
+import Data.Time.Clock
+import Network.HTTP.Conduit (simpleHttp)
 import Text.Feed.Import
 import Text.Feed.Query
 import Text.Feed.Types
-import Data.Maybe
+import Utils
 
-smbcHTML :: IO String
+smbcHTML :: IO Text
 smbcHTML = do
-  xml <- smbcXML
-  return . fromMaybe "" $ do
-    item <- parse xml
-    title <- getItemTitle item
-    summary <- getItemSummary item
-    Just $ "<center><h2>" ++ title ++ "</h2></center>\n<center><a href=\"https://smbc-comics.com\">" 
-      ++ summary ++ "</a><br></center>"
+  (title, summary) <- getTitleAndSummary "https://www.smbc-comics.com/rss.php"
+  return . template html $ fromList [("*title", title), ("*summary", summary)]
 
-parse :: B.ByteString -> Maybe Item
-parse xml = parseFeedSource xml >>= (Just . head . feedItems)
-
-smbcXML :: IO B.ByteString
-smbcXML = simpleHttp "https://www.smbc-comics.com/rss.php"
+html = "<center><h2>*title</h2></center><br><center>*summary<br></center>"

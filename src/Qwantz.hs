@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Xkcd
-  ( xkcdHTML
+module Qwantz
+  ( qwantzHTML
   ) where
 
 import qualified Data.ByteString.Lazy as B
@@ -19,19 +19,21 @@ import Text.Feed.Util
 import Text.HTML.Scalpel
 import Utils
 
-xkcdHTML :: IO Text
-xkcdHTML = do
-  (title, summary) <- getTitleAndSummary "https://xkcd.com/atom.xml"
+qwantzHTML :: IO Text
+qwantzHTML = do
+  (title, summary) <- getTitleAndSummary "http://www.qwantz.com/rssfeed.php"
   return . template htmlS $
     fromList
-      [("*title", title), ("*summary", summary), ("*alt", scrapeAlt summary)]
+      [("*title", title), ("*summary", scrapeImg summary), ("*alt", scrapeAlt summary)]
 
 htmlS :: Text
 htmlS =
   pack $
   "<div align=\"center\"><h2>*title</h2></div>\n<div align=\"center\">" ++
-  "<a href=\"https://xkcd.com\">*summary</a><br>*alt</div><br>" ++
-  "<div align=\"center\"><a href=\"https://explainxkcd.com\">confused?</a></div>"
+  "<a href=\"https://xkcd.com\">*summary</a> <p>*alt</p></div><br>"
 
 scrapeAlt :: Text -> Text
-scrapeAlt s = fromMaybe "" (scrapeStringLike s . attr "alt" $ "img")
+scrapeAlt s = fromMaybe "" (scrapeStringLike s . attr "title" $ "img")
+
+scrapeImg :: Text -> Text
+scrapeImg s = fromMaybe "" (scrapeStringLike s . html $ "img" @: [hasClass "comic"])
