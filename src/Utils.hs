@@ -9,39 +9,47 @@ module Utils
 
 import qualified Data.ByteString.Lazy as B
 import Data.Map as Map
+
 import Data.Maybe
 import Data.Text
 import Data.Text.Encoding
-import Data.Time
-import Data.Time.Clock
-import Data.Time.Format
-import Data.Time.LocalTime
-import Network.HTTP.Conduit (simpleHttp)
+
 import Text.Feed.Import
 import Text.Feed.Query
 import Text.Feed.Types
-import Text.Feed.Util
 
-template :: Text -> [(Text, Text)] -> Text
-template t = Map.foldlWithKey' replaceOrEmpty t . fromList
+import Data.Time
 
+import Network.HTTP.Conduit (simpleHttp)
+
+-- |Template function (USED EVERWHERE) for replacing keys in template.
+-- TODO: Replace with something better than * (mustache templating)
+template :: [(Text, Text)] -> Text -> Text
+template k t = (Map.foldlWithKey' replaceOrEmpty t . fromList) k
+
+-- |Safe replace on text.
 replaceOrEmpty :: Text -> Text -> Text -> Text
 replaceOrEmpty _ _ "" = ""
 replaceOrEmpty acc k v = replace k v acc
 
+-- |Way to go straight from String URL to text response.
 getHttp :: String -> IO Text
 getHttp = fmap (decodeUtf8 . B.toStrict) . simpleHttp
 
+-- |Returns latest item from RSS feed, but only if it's within the last 24
+-- hours.
 getLatestItem :: Text -> UTCTime -> Maybe Item
 getLatestItem xml time = do
-  feed <- parseFeedString $ unpack xml
-  fstItem <- Just . Prelude.head $ feedItems feed
-  update <- getItemPublishDate fstItem
-  date <- update
+  feed <- parseFeedString $ unpack xml -- make it a string. Parse it.
+  fstItem <- Just . Prelude.head $ feedItems feed -- Get first item.
+  updateTime <- getItemPublishDate fstItem
+  date <- updateTime
+  -- Check if the time of RSS feed + 24 hours is less than now.
   if addUTCTime (24 * 60 * 60) date >= time
     then Just fstItem
     else Nothing
 
+-- |Gets the title and summary from XML given. Common in RSS feeds.
 getTitleAndSummary :: String -> IO (Text, Text)
 getTitleAndSummary name = do
   xml <- getHttp name

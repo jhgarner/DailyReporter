@@ -1,14 +1,15 @@
-name:                dailyReport
+name:                DailyReporter
 version:             0.1.0.0
-github:              "githubuser/dailyReport"
-license:             BSD3
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2018 Author name here"
+github:              "jhgarner/DailyReporter"
+license:             MIT
+author:              "Jackson Garner"
+maintainer:          "jhgarner@mymail.mines.edu"
+copyright:           "2018 Jackson Garner"
 
 extra-source-files:
 - README.md
 - ChangeLog.md
+- LICENSE
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
@@ -17,7 +18,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on Github at <https://github.com/githubuser/dailyReport#readme>
+description:         Please see the README on GitHub at <https://github.com/jhgarner/DailyReporter#readme>
 
 dependencies:
 - base >= 4.7 && < 5
@@ -31,14 +32,13 @@ dependencies:
 - scalpel
 - feed
 - stringsearch
-- system-locale
 - containers
 
 library:
   source-dirs: src
 
 executables:
-  dailyReport-exe:
+  DailyReporter-exe:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
@@ -46,10 +46,10 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - dailyReport
+    - DailyReporter
 
 tests:
-  dailyReport-test:
+  DailyReporter-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -57,4 +57,4 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - dailyReport
+    - DailyReporter
