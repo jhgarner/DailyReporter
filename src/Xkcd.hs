@@ -1,29 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Xkcd
-  ( xkcdHTML
+  ( xkcd
   ) where
 
-import qualified Data.ByteString.Lazy as B
-import Data.Char
-import Data.Map
 import Data.Maybe
 import Data.Text
-import Data.Time.Clock
-import Data.Time.LocalTime
-import Network.HTTP.Conduit (simpleHttp)
-import Text.Feed.Import
-import Text.Feed.Query
-import Text.Feed.Types
-import Text.Feed.Util
 import Text.HTML.Scalpel
 import Utils
 
-xkcdHTML :: IO Text
-xkcdHTML = do
+xkcd :: IO Text
+xkcd = do
   (title, summary) <- getTitleAndSummary "https://xkcd.com/atom.xml"
-  return . template htmlS $
-    fromList
+  return $ template htmlS
       [("*title", title), ("*summary", summary), ("*alt", scrapeAlt summary)]
 
 htmlS :: Text
@@ -34,4 +23,4 @@ htmlS =
   "<div align=\"center\"><a href=\"https://explainxkcd.com\">confused?</a></div>"
 
 scrapeAlt :: Text -> Text
-scrapeAlt s = fromMaybe "" (scrapeStringLike s . attr "alt" $ "img")
+scrapeAlt s = fromMaybe "" . scrapeStringLike s . attr "alt" $ "img"

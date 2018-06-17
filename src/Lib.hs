@@ -12,26 +12,13 @@ import PDL
 import Qwantz
 import Word
 
-import Data.Text
+import Data.Text (Text)
+import Data.Text.IO as T
+import Control.Monad
 
--- import PDL
 someFunc :: IO ()
 someFunc = do
-  weather <- weatherHTML
-  ec <- ecHTML
-  apod <- apodHTML
-  smbc <- smbcHTML
-  butter <- butterHtml
-  pdl <- pdlHTML
-  qwantz <- qwantzHTML
-  word <- wordHTML
-  xkcd <- xkcdHTML
-  putStrLn $ unpack weather
-  putStrLn apod
-  putStrLn $ unpack word
-  putStrLn $ unpack xkcd
-  putStrLn $ unpack smbc
-  putStrLn $ unpack ec
-  putStrLn $ unpack butter
-  putStrLn $ unpack pdl
-  putStrLn $ unpack qwantz
+  mapM_ (>>= T.putStrLn) sources
+
+sources :: [IO Text]
+sources = [weather, ec, apod, smbc, butter, pdl, qwantz, word, xkcd]

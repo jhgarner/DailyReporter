@@ -1,16 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Apod
-  ( apodHTML
+  ( apod
   ) where
 
-import qualified Data.ByteString as BB
-import Data.ByteString.Char8
-import qualified Data.ByteString.Lazy as B
-import Data.ByteString.Search
 import Data.Maybe
 import Network.HTTP.Conduit (simpleHttp)
 import Text.HTML.Scalpel
+
+import Data.Text
+import Data.Text.Encoding
+
+import Utils
 
 data Apod = Apod
   { img :: String
@@ -18,36 +19,23 @@ data Apod = Apod
   , explanation :: String
   }
 
-apodHTML :: IO String
-apodHTML = do
-  scrapedM <- scrapeSite
-  return . fromMaybe "" $
-    (\(Apod img title exp) ->
-       "<center><a href=\"https://apod.nasa.gov/apod/astropix.html\">" ++
-       "<h2>Astronomy Picture of the Day</h2></a>" ++
-       "<br>" ++
-       title ++
-       "<br><br><a href=\"https://apod.nasa.gov/apod/" ++
-       img ++
-       "\"><img width=800 src=https://apod.nasa.gov/apod/" ++
-       img ++ "></a><br><br>" ++ exp ++ "</center>") <$>
-    scrapedM
+apod :: IO Text
+apod = scrapeSite >>= return . template htmlS . fromMaybe []
 
-scrapeSite :: IO (Maybe Apod)
+htmlS :: Text
+htmlS = "<center><a href=\"https://apod.nasa.gov/apod/astropix.html\"><h2>Astronomy Picture of the Day</h2></a><br>*title<br><br><a href=\"https://apod.nasa.gov/apod/*img\"><img width=800 src=https://apod.nasa.gov/apod/*img></a><br><br>*exp</center>"
+
+scrapeSite :: IO (Maybe [(Text, Text)])
 scrapeSite = do
-  response <- apodResponse
-  let fixed =
-        replace ("<p>" :: BB.ByteString) ("</p><p>" :: BB.ByteString) .
-        B.toStrict $
-        response
-  return $ scrapeStringLike ((unpack . B.toStrict $ fixed) :: String) scraper
+  response <- replace "<p>" "</p><p>" <$> source
+  return $ scrapeStringLike response scraper
 
-apodResponse :: IO B.ByteString
-apodResponse = simpleHttp "https://apod.nasa.gov/apod/astropix.html"
+source :: IO Text
+source = getHttp "https://apod.nasa.gov/apod/astropix.html"
 
-scraper :: Scraper String Apod
+scraper :: Scraper Text [(Text, Text)]
 scraper = do
-  img <- attrs "href" "a"
+  img <- (!! 1) <$> attrs "href" "a"
   title <- html "b"
-  explanation <- texts "p"
-  return $ Apod (img !! 1) title (explanation !! 2)
+  explanation <- (!! 2) <$> texts "p"
+  return $ ("*img", img) : ("*title", title) : ("*exp", explanation) : []

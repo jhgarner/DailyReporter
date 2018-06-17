@@ -2,7 +2,7 @@
 
 module Utils
   ( template
-  , getFeed
+  , getHttp
   , getLatestItem
   , getTitleAndSummary
   ) where
@@ -22,15 +22,15 @@ import Text.Feed.Query
 import Text.Feed.Types
 import Text.Feed.Util
 
-template :: Text -> Map.Map Text Text -> Text
-template t newStrings = Map.foldlWithKey' replaceOrEmpty t newStrings
+template :: Text -> [(Text, Text)] -> Text
+template t = Map.foldlWithKey' replaceOrEmpty t . fromList
 
 replaceOrEmpty :: Text -> Text -> Text -> Text
 replaceOrEmpty _ _ "" = ""
 replaceOrEmpty acc k v = replace k v acc
 
-getFeed :: String -> IO Text
-getFeed = fmap (decodeUtf8 . B.toStrict) . simpleHttp
+getHttp :: String -> IO Text
+getHttp = fmap (decodeUtf8 . B.toStrict) . simpleHttp
 
 getLatestItem :: Text -> UTCTime -> Maybe Item
 getLatestItem xml time = do
@@ -44,7 +44,7 @@ getLatestItem xml time = do
 
 getTitleAndSummary :: String -> IO (Text, Text)
 getTitleAndSummary name = do
-  xml <- getFeed name
+  xml <- getHttp name
   time <- getCurrentTime
   return . fromMaybe ("", "") $ do
     item <- getLatestItem xml time
