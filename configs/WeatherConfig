@@ -1,4 +1,4 @@
 Config {
-    apikey = "abb2504f8579fc04baf9708889b4c795",
+    apikey = "PUT YOUR API KEY HERE",
     loc = ("38.933771", "-104.850764")
 }

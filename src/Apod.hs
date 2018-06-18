@@ -27,7 +27,7 @@ htmlS :: IO Text
 htmlS = Data.Text.IO.readFile "templates/Apod.html"
 
 -- |Scrape site, but fix all the messed up <p> tags (all of them).
--- TODO: Look for a better way. Salvation.
+-- TODO: Look for a better way to fix `<p>`. Salvation.
 scrapeSite :: IO (Maybe [(Text, Text)])
 scrapeSite = do
   response <- replace "<p>" "</p><p>" <$> source
