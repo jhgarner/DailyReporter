@@ -33,6 +33,7 @@ dependencies:
 - feed
 - stringsearch
 - containers
+- mime-mail
 
 library:
   source-dirs: src

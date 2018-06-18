@@ -1,5 +1,6 @@
 module Lib
-  ( getEmailHtml
+  ( mailReport,
+    printEmailHtml
   ) where
 
 import Apod
@@ -11,8 +12,9 @@ import Ec
 import PDL
 import Qwantz
 import Word
+import Email
 
-import Data.Text (Text)
+import Data.Text
 -- import Data.Text as T
 import Data.Text.IO as I
 
@@ -20,15 +22,21 @@ import Data.Text.IO as I
 --     sources :: [IO Text]
 -- } deriving (Read)
 
--- |Return email html compiled from `sources`
+-- |Prints email html compiled from `sources`
 -- Html items are simply appended without additional formatting.
 -- TODO: Allow user config for sources.
 -- TODO: Allow easier creation for new sources of standard RSS type.
-getEmailHtml :: IO ()
-getEmailHtml = do
+printEmailHtml :: IO ()
+printEmailHtml = do
   mapM_ (>>= I.putStrLn) sources
 
--- |List of formatting.
+-- |Takes sources and compiles it into a single html. Then it emails it!
+mailReport :: IO ()
+mailReport = do
+  s <- sequence sources
+  mail $ intercalate (pack "\n") s
+
+-- |List of sources.
 sources :: [IO Text]
 sources = [weather, ec, apod, smbc, butter, pdl, qwantz, word, xkcd]
 

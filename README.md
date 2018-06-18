@@ -1,6 +1,7 @@
 # Daily Reporter
 
-It compiles email html (no sending yet) from various sources.
+It compiles email html (no sending yet) from various sources. Then, it sends it
+with postfix sendmail (look elsewhere on how to configure this).
 
 It *should be* easily extensible, relatively robust, and type-safe.
 
