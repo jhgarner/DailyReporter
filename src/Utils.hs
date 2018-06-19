@@ -5,6 +5,8 @@ module Utils
   , getHttp
   , getLatestItem
   , getTitleAndSummary
+  --, getConfig
+  , readConfig
   ) where
 
 import qualified Data.ByteString.Lazy as B
@@ -13,6 +15,7 @@ import Data.Map as Map
 import Data.Maybe
 import Data.Text
 import Data.Text.Encoding
+
 
 import Text.Feed.Import
 import Text.Feed.Query
@@ -59,3 +62,7 @@ getTitleAndSummary name = do
     title <- getItemTitle item
     summary <- getItemSummary item
     return (title, summary)
+
+-- |Automatic parser for getting config from file into mail config.
+readConfig :: (Read a) => String -> IO a
+readConfig = fmap read . readFile . ("configs/" ++)
