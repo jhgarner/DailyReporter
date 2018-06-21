@@ -26,7 +26,7 @@ mail :: T.Text -> IO ()
 mail html = do
   m <- getConfig
   renderSendMail $ addPart [h, h] $ configToMail $ readConfig m
-  where h = htmlPart (L.pack (T.unpack html)) -- creative unpacking to get it to Data.Text.Lazy
+  where h = htmlPart $ L.fromStrict html
 
 -- |Helper function to convert our user config at (configs/MailConfig) into a mailing.
 configToMail :: MailConfig -> Mail

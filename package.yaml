@@ -31,7 +31,6 @@ dependencies:
 - lens
 - scalpel
 - feed
-- stringsearch
 - containers
 - mime-mail
 
