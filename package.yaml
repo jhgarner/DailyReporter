@@ -32,6 +32,7 @@ dependencies:
 - scalpel
 - feed
 - containers
+- mime-mail-ses
 - mime-mail
 
 library:
