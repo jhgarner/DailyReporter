@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeApplications #-}
+
 module Lib
   ( mailReport,
     printEmailHtml
@@ -14,9 +16,13 @@ import Qwantz
 import Word
 import Email
 
-import Data.Text
+import Data.Hashable
+import Control.Exception
+import Control.Monad
+
+import Data.Text (Text, pack, intercalate)
 -- import Data.Text as T
-import Data.Text.IO as I
+import qualified Data.Text.IO as I
 
 -- data SourcesConfig = Config {
 --     sources :: [IO Text]
@@ -28,17 +34,31 @@ import Data.Text.IO as I
 -- TODO: Allow easier creation for new sources of standard RSS type.
 printEmailHtml :: IO ()
 printEmailHtml = do
-  mapM_ (>>= I.putStrLn) sources
+  s <- sequence sources
+  filtered <- removeOld s
+  addNew s
+  mapM_ I.putStrLn filtered
 
 -- |Takes sources and compiles it into a single html. Then it emails it!
 mailReport :: IO ()
 mailReport = do
   s <- sequence sources
-  mail $ intercalate (pack "\n") s
+  filtered <- removeOld s
+  addNew s
+  mail $ intercalate (pack "\n") filtered
 
 -- |List of sources.
 sources :: [IO Text]
 sources = [weather, ec, apod, smbc, butter, pdl, qwantz, word, xkcd]
+
+removeOld :: [Text] -> IO [Text]
+removeOld texts = handle @IOException (\_ -> return texts) $ do
+  cache <- read @[Int] <$> readFile "cache.txt"
+  when (length cache /= length texts) $ fail "Bad cache"
+  return $ fmap snd $ filter (\(h, t) -> h /= hash t) $ zip cache texts
+
+addNew :: [Text] -> IO ()
+addNew texts = writeFile "cache.txt" $ show $ fmap hash texts
 
 -- -- |Helper function for turning text into weather config.
 -- readConfig :: Text -> SourcesConfig
