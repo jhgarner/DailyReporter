@@ -14,7 +14,9 @@ import Data.Map as Map
 
 import Data.Maybe
 import Data.Text
+import qualified Data.Text.Lazy as L
 import Data.Text.Encoding
+import qualified Data.Text.Encoding.Error as E
 
 import Control.Applicative
 
@@ -36,9 +38,11 @@ replaceOrEmpty :: Text -> Text -> Text -> Text
 replaceOrEmpty _ _ "" = ""
 replaceOrEmpty acc k v = replace k v acc
 
+
 -- |Way to go straight from String URL to text response.
 getHttp :: String -> IO Text
-getHttp = fmap (decodeUtf8 . B.toStrict) . simpleHttp
+getHttp = fmap (decodeUtf8With E.lenientDecode . B.toStrict) . simpleHttp
+
 
 -- |Returns latest item from RSS feed, but only if it's within the last 24
 -- hours.

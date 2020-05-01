@@ -15,6 +15,7 @@ import Data.Text.IO
 
 import Data.Time.Clock.POSIX
 import Data.Time.Format
+import Data.Time.LocalTime
 
 import Utils
 
@@ -91,11 +92,16 @@ getKey json_response (p:ps) =
         Just (Number n) -> Just $ pack . show $ n
         _ -> Just $ Data.Text.concat [pack "Error getting ", p]
 
+-- |Hardcoded TimeZone
+currentZone :: TimeZone
+currentZone = hoursToTimeZone (-6)
+
 -- |Used to get time from darksky api. Solely for this.
 getTime :: Maybe Text -> Text
 getTime =
     maybe "None" (pack .
                   formatTime defaultTimeLocale "%H:%M" .
+                  utcToZonedTime currentZone .
                   posixSecondsToUTCTime .
                   realToFrac .
                   (read :: String -> Double)
