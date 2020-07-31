@@ -21,7 +21,14 @@ Fix documentation spacing.
 
 Compile with:
 
-` $ stack build`
+` $ stack build --no-nix --docker && cp $(stack --docker --no-nix path --local-install-root)/bin/DailyReporter-exe bootstrap && zip -r function.zip bootstrap configs templates`
+
+Then upload the zipped file to AWS lambda. The handler should be
+"app/Main.handler", it should use a custom runtime, memory should be ~300MB, and
+runtime should be ~3 minutes although it usually doesn't reach those limits. To
+make it go off every morning, add a trigger from eventbridge and use their cron
+syntax. I used ` cron(00 12 * * ? *) ` and edited the input to be a constant
+`[]`.
 
 If you want to compile the documentation, use
 

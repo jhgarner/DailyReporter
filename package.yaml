@@ -23,6 +23,7 @@ description:         Please see the README on GitHub at <https://github.com/jhga
 dependencies:
 - base >= 4.7 && < 5
 - aeson
+- aws-lambda-haskell-runtime
 - lens-aeson
 - http-conduit
 - bytestring
@@ -35,6 +36,9 @@ dependencies:
 - mime-mail-ses
 - mime-mail
 - hashable
+- amazonka-s3
+- amazonka
+- conduit-extra
 
 library:
   source-dirs: src
@@ -43,9 +47,12 @@ executables:
   DailyReporter-exe:
     main:                Main.hs
     source-dirs:         app
+    cc-options: -static
+    ld-options: -static -pthread
     ghc-options:
     - -threaded
     - -rtsopts
+    - -static
     - -with-rtsopts=-N
     dependencies:
     - DailyReporter
