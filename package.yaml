@@ -39,6 +39,8 @@ dependencies:
 - amazonka-s3
 - amazonka
 - conduit-extra
+- regex-posix
+- bytestring
 
 library:
   source-dirs: src
