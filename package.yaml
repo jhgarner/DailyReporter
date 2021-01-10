@@ -41,6 +41,11 @@ dependencies:
 - conduit-extra
 - regex-posix
 - bytestring
+- unordered-containers
+- vector
+- fast-tagsoup
+- tagsoup
+- recursion-schemes
 
 library:
   source-dirs: src

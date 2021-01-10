@@ -17,4 +17,4 @@ initializeContext = return ()
 generateLambdaDispatcher StandaloneLambda defaultDispatcherOptions
 
 -- main :: IO ()
--- main = printEmailHtml >>= print
+-- main = mailReport >>= print

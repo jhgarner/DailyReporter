@@ -1,0 +1,22 @@
+{
+    "currently": {
+        "summary": "*currently",
+        "apparentTemperature": "*currentTemp"
+    },
+    "daily": {
+        "summary": "*summary",
+        "data": {
+            "0": {
+                "temperatureHigh": "*tempHigh",
+                "temperatureLow": "*tempLow",
+                "temperatureHighTime": ["*tht", "None"],
+                "temperatureLowTime": ["*tlt", "None"],
+                "precipProbability": "*precipProb",
+                "precipIntensity": "*precipInt",
+                "precipIntensityMax": "*precipIntMax",
+                "precipIntensityMaxTime": "*pimt",
+                "summary": "*nowSummary"
+            }
+        }
+    }
+}

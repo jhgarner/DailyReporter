@@ -31,6 +31,8 @@ import Control.Monad.Trans.AWS
 import Control.Lens
 import Data.Conduit.Binary
 
+import Parser
+
 -- data SourcesConfig = Config {
 --     sources :: [IO Text]
 -- } deriving (Read)

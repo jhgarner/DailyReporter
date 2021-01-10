@@ -1,0 +1,7 @@
+{
+    "img=*summary": {
+        "attr": {
+            "title": "*alt"
+        }
+    }
+}

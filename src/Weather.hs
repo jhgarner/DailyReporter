@@ -16,8 +16,15 @@ import Data.Text.IO
 import Data.Time.Clock.POSIX
 import Data.Time.Format
 import Data.Time.LocalTime
+import Text.Read (readMaybe)
+
+import Data.HashMap.Strict
 
 import Utils
+
+import Parser
+
+import Prelude hiding (readFile)
 
 -- |Configuration for weather information (location and apikey)
 data WeatherConfig = Config {
@@ -30,35 +37,14 @@ weather :: IO Text
 weather = do
   config <- readConfig "WeatherConfig"
   w <- response config
+  parser <- readFile "parsers/weather.json"
   h <- htmlS
   return . fromMaybe "Error getting weather" $ do
-    currently <- getKey w ["currently", "summary"]
-    currentTemp <- getKey w ["currently", "apparentTemperature"]
-    summary <- getKey w ["daily", "summary"]
-    dayData <- w ^? key "daily" . key "data" . nth 0
-    tempHigh <- getKey dayData ["temperatureHigh"]
-    let tht = getTime $ getKey dayData ["temperatureHighTime"]
-    tempLow <- getKey dayData ["temperatureLow"]
-    let tlt = getTime $ getKey dayData ["temperatureLowTime"]
-    precipProb <- getKey dayData ["precipProbability"]
-    precipInt <- getKey dayData ["precipIntensity"]
-    precipIntMax <- getKey dayData ["precipIntensityMax"]
-    let pimt = getTime $ getKey dayData ["precipIntensityMaxTime"]
-    nowSummary <- getKey dayData ["summary"]
-    Just (template
-        [ ("*summary", summary)
-        , ("*tempHigh", tempHigh)
-        , ("*tht", tht)
-        , ("*tempLow", tempLow)
-        , ("*tlt", tlt)
-        , ("*precipInt", precipInt)
-        , ("*precipIntMax", precipIntMax)
-        , ("*pimt", pimt)
-        , ("*precipProb", precipProb)
-        , ("*currently", currently)
-        , ("*currentTemp", currentTemp)
-        , ("*nowSummary", nowSummary)
-        ] h)
+    -- TODO use lenses here
+    params1 <- extractJson parser w
+    let params2 = update (Just . getTime) "*tht" params1
+    let params = update (Just . getTime) "*tlt" params2
+    Just (template (toList params) h)
 
 
 -- |Templating (uses simple *) for weather email section.
@@ -81,28 +67,16 @@ request config = do
         location = loc config
         path = "/" ++ fst location ++ "," ++ snd location
 
--- |Utility function for getting value from json.
-getKey :: (AsValue j) => j -> [Text] -> Maybe Text
-getKey _ [] = Nothing
-getKey json_response (p:ps) =
-    case json_response ^?
-         Prelude.foldl (\acc a -> acc . key a) (key p) ps of
-        Nothing -> Nothing
-        Just (String s) -> Just s
-        Just (Number n) -> Just $ pack . show $ n
-        _ -> Just $ Data.Text.concat [pack "Error getting ", p]
-
 -- |Hardcoded TimeZone
 currentZone :: TimeZone
 currentZone = hoursToTimeZone (-6)
 
 -- |Used to get time from darksky api. Solely for this.
-getTime :: Maybe Text -> Text
-getTime =
-    maybe "None" (pack .
-                  formatTime defaultTimeLocale "%H:%M" .
-                  utcToZonedTime currentZone .
-                  posixSecondsToUTCTime .
-                  realToFrac .
-                  (read :: String -> Double)
-                  . unpack)
+-- TODO make this a little less gross to look at
+getTime :: Text -> Text
+getTime t = maybe t
+    (pack .
+    formatTime defaultTimeLocale "%H:%M" .
+    utcToZonedTime currentZone .
+    posixSecondsToUTCTime .
+        realToFrac) $ (readMaybe :: String -> Maybe Double) $ unpack t

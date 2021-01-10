@@ -3,5 +3,5 @@ bootstrap
 build/
 DailyReporter.cabal
 *~
-DailReporter-exe*
+DailyReporter-exe*
 function.zip
