@@ -20,7 +20,6 @@ pdl = do
   h <- htmlS
   (title, _) <- getTitleAndSummary pdlFeed
   img <- scrapeImg <$> getHttp pdlURL
-  print img
   return (template
           [("*title", title)
          , ("*img", img)] h)
@@ -39,4 +38,4 @@ htmlS = Data.Text.IO.readFile "templates/PDL.html"
 
 -- |Scraping logic for PDL
 scrapeImg :: Text -> Text
-scrapeImg s = decodeUtf8 $ (encodeUtf8 s) =~ ("<figure.*</figure>" :: B.ByteString)
+scrapeImg s = decodeUtf8 $ encodeUtf8 s =~ ("<figure.*</figure>" :: B.ByteString)

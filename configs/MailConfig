@@ -1,5 +1,0 @@
-Config {
-    from    = (Just "Your Name", "youremail@example.org"),
-    to      = [(Just "Their Name", "theiremail@example.org")],
-    subject = "Daily Report"
-}

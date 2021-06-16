@@ -1,4 +1,0 @@
-Config {
-    apikey = "PUT YOUR API KEY HERE",
-    loc = ("38.933771", "-104.850764")
-}

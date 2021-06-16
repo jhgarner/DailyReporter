@@ -13,10 +13,9 @@ ec :: IO Text
 ec = do
   h <- htmlS
   (title, summary) <- getTitleAndSummary "https://existentialcomics.com/rss.xml"
-  let fixedSummary = replace "//" "http://" summary
   return (template
           [("*title", title)
-         , ("*summary", fixedSummary)] h)
+         , ("*summary", summary)] h)
 
 -- |Template file for existential comics (templates/Ec.html)
 htmlS :: IO Text

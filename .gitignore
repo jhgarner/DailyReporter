@@ -5,3 +5,5 @@ DailyReporter.cabal
 *~
 DailyReporter-exe*
 function.zip
+result
+config.json

@@ -1,0 +1,12 @@
+{
+    "div": {
+        "attr": {
+            "class": "wp-block-image"
+        }
+        "img": {
+            "attr": {
+                "src": "*img"
+            }
+        }
+    }
+}

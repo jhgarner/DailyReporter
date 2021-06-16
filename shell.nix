@@ -4,7 +4,7 @@ in
 pkgs.mkShell {
   buildInputs = [
     pkgs.stack
-    pkgs.haskellPackages.ghcide
-    pkgs.docker
+    pkgs.haskell-language-server
+    pkgs.niv
   ];
 }
