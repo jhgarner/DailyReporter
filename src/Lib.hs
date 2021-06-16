@@ -88,6 +88,4 @@ removeOld texts = do
 
 addNew :: [Text] -> IO ()
 addNew texts =
-  pure ()
-
--- void . runCommand . putObject "daily-reporter-cache" "cache" . RequestBodyLBS . B.pack . show $ fmap hash texts
+  void . runCommand . putObject "daily-reporter-cache" "cache" . RequestBodyLBS . B.pack . show $ fmap hash texts
