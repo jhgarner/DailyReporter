@@ -1,6 +1,7 @@
 name: "Daily"
 on:
-  schedule:
+  - workflow_dispatch:
+  - schedule:
     - cron: '0 6 * * *'
 jobs:
   tests:
@@ -19,5 +20,6 @@ jobs:
       with:
         name: jhgarner-projects
     - run: nix-build
-    - run: cd result
-    - run: dailyReporter/bin/DailyReporter-exe
+    - run: |
+      cd result
+      dailyReporter/bin/DailyReporter-exe
