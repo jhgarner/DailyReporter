@@ -5,7 +5,7 @@ module Utils
   , getHttp
   , getLatestItem
   , getTitleAndSummary
-  --, getConfig
+  , getTitleAndContent
   , readConfig
   ) where
 
@@ -55,6 +55,11 @@ getTitleAndSummary :: String -> IO (Text, Text)
 getTitleAndSummary name = do
   item <- getLatestItem <$> getHttp name
   return $ fromMaybe mempty $ liftA2 (,) (getItemTitle item) (getItemSummary item)
+
+getTitleAndContent :: String -> IO (Text, Text)
+getTitleAndContent name = do
+  item <- getLatestItem <$> getHttp name
+  return $ fromMaybe mempty $ liftA2 (,) (getItemTitle item) (getItemContent item)
 
 -- |Automatic parser for getting config from file into mail config.
 readConfig :: (Read a) => String -> IO a

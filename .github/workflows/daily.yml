@@ -2,7 +2,7 @@ name: "Daily"
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '0 12 * * *'
 jobs:
   tests:
     runs-on: ubuntu-latest
