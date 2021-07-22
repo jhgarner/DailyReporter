@@ -32,12 +32,12 @@ extractJson v s = join $ extractJson' <$> decodeStrict (encodeUtf8 v) <*> decode
 
 extractJson' :: Value -> Value -> Maybe (HashMap Text Text)
 extractJson' (Object guide) (Object target) =
-    flatten <$> traverseWithKey (\(keyAndAlias -> (name, alias)) v -> addAlias alias content $ target ^. at name >>= extractJson' v) guide
+    flatten <$> traverseWithKey (\(keyAndAlias -> (name, alias)) v -> addAlias alias content <$> (target ^. at name >>= extractJson' v)) guide
     where
         content = toText $ encode $ Object target
 
 extractJson' (Object guide) (Array target) =
-    flatten <$> traverseWithKey (\(keyAndAlias -> (name, alias)) v -> addAlias alias content $ target ^? ix (read @Int $ unpack name) >>= extractJson' v) guide
+    flatten <$> traverseWithKey (\(keyAndAlias -> (name, alias)) v -> addAlias alias content <$> (target ^? ix (read @Int $ unpack name) >>= extractJson' v)) guide
     where
         content = toText $ encode $ Array target
 
@@ -68,22 +68,20 @@ extractHtml' (String guide) name = do
     pure $ Just $ singleton guide result
 
 extractHtml' (Object guide) name = do
-    let classes = fromMaybe [] $ extractClasses <$> guide ^. at "class"
+    let classes = maybe [] extractClasses $ guide ^. at "class"
     -- let attrs = fromMaybe [] $ extractAttrs <$> guide ^. at "attr"
     let attrs = []
     let getChildren = do
             results <- traverseWithKey (\(keyAndAlias -> (name, alias)) v -> do
                 content <- html (TagString (unpack name) @: (classes ++ attrs)) <|> pure ""
-                addAlias alias content <$> extractHtml' v (unpack name))
+                fmap (addAlias alias content) <$> extractHtml' v (unpack name))
                 $ guide & at "class" .~ Nothing & at "attr" .~ Nothing
             hmFake <- traverse matchAttrs $ guide ^. at "attr"
             let hm = fromMaybe mempty $ join hmFake
             return $ union hm . flatten <$> sequence results
-    results <-
-        if name == ""
-            then getChildren
-            else chroot (TagString name @: (classes ++ attrs)) getChildren
-    pure results
+    if name == ""
+        then getChildren
+        else chroot (TagString name @: (classes ++ attrs)) getChildren
 
 
 extractClasses :: Value -> [AttributePredicate]
@@ -107,7 +105,6 @@ keyAndAlias t = case split (== '=') t of
     [a, b] -> (a, b)
     [a] -> (a, "")
 
-addAlias :: Text -> Text -> Maybe (HashMap Text Text) -> Maybe (HashMap Text Text)
-addAlias _ _ Nothing = Nothing
+addAlias :: Text -> Text -> HashMap Text Text -> HashMap Text Text
 addAlias "" _ m = m
-addAlias t val (Just hm) = Just $ hm & at t .~ Just val
+addAlias t val hm = hm & at t ?~ val

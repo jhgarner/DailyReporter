@@ -5,7 +5,7 @@ module Utils
   , getHttp
   , getLatestItem
   , getTitleAndSummary
-  , getTitleAndContent
+  , getTitle
   , readConfig
   ) where
 
@@ -35,7 +35,7 @@ template k t = (Map.foldlWithKey' replaceOrEmpty t . fromList) k
 
 -- |Safe replace on text.
 replaceOrEmpty :: Text -> Text -> Text -> Text
-replaceOrEmpty _ _ "" = ""
+replaceOrEmpty acc "" _ = acc
 replaceOrEmpty acc k v = replace k v acc
 
 
@@ -56,10 +56,10 @@ getTitleAndSummary name = do
   item <- getLatestItem <$> getHttp name
   return $ fromMaybe mempty $ liftA2 (,) (getItemTitle item) (getItemSummary item)
 
-getTitleAndContent :: String -> IO (Text, Text)
-getTitleAndContent name = do
+getTitle :: String -> IO Text
+getTitle name = do
   item <- getLatestItem <$> getHttp name
-  return $ fromMaybe mempty $ liftA2 (,) (getItemTitle item) (getItemContent item)
+  return $ fromMaybe mempty $ getItemTitle item
 
 -- |Automatic parser for getting config from file into mail config.
 readConfig :: (Read a) => String -> IO a
