@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeApplications #-}
@@ -13,11 +14,12 @@ import qualified Aws
 import Aws.S3 as S3
 import Buttersafe
 import Config
-import Control.Exception
 import Control.Lens
 import Control.Monad
+import Control.Monad.Catch
 import Control.Monad.Reader
 import Control.Monad.Trans.Resource
+import Control.Retry
 import qualified Data.ByteString.Lazy.Char8 as B (pack, unpack)
 import Data.Conduit.Binary
 import Data.Hashable
@@ -26,7 +28,7 @@ import Data.Text.Encoding
 import qualified Data.Text.IO as I
 import Ec
 import Email
-import Network.HTTP.Conduit (RequestBody (..), newManager, responseBody, tlsManagerSettings)
+import Network.HTTP.Conduit (HttpException (HttpExceptionRequest), RequestBody (..), newManager, responseBody, tlsManagerSettings)
 import PDL
 import Parser
 import Qwantz
@@ -65,16 +67,21 @@ mailReport = do
 -- | List of sources.
 sources :: Config -> [IO Text]
 sources config =
-  [ print "weather" >> weather config,
-    print "ec" >> ec,
-    print "apod" >> apod config,
-    print "smbd" >> smbc,
-    print "butter" >> butter,
-    print "pdl" >> pdl,
-    print "qwantz" >> qwantz,
-    print "word" >> word,
-    print "xkcd" >> xkcd
-  ]
+  let policy = limitRetries 5 <> fibonacciBackoff 500000
+      handler = const $
+        Handler $ \case
+          HttpExceptionRequest _ _ -> pure True
+   in recovering policy [handler] . const
+        <$> [ print "weather" >> weather config,
+              print "ec" >> ec,
+              print "apod" >> apod config,
+              print "smbd" >> smbc,
+              print "butter" >> butter,
+              print "pdl" >> pdl,
+              print "qwantz" >> qwantz,
+              print "word" >> word,
+              print "xkcd" >> xkcd
+            ]
 
 removeOld :: [Text] -> IO [Text]
 removeOld texts = do
