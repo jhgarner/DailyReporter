@@ -1,8 +1,13 @@
 {
-    "img": {
+    "div": {
         "attr": {
-            "src": "*img",
-            "loading": "lazy"
+            "class": "post"
+        },
+        "img": {
+            "attr": {
+                "src": "*img",
+                "loading": "lazy"
+            }
         }
     }
 }

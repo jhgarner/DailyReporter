@@ -21,6 +21,7 @@ import Control.Monad.Reader
 import Control.Monad.Trans.Resource
 import Control.Retry
 import qualified Data.ByteString.Lazy.Char8 as B (pack, unpack)
+import qualified Data.ByteString.Lazy as LB
 import Data.Conduit.Binary
 import Data.Hashable
 import Data.Text (Text, intercalate, pack, unpack)
@@ -61,13 +62,14 @@ mailReport :: IO ()
 mailReport = do
   config <- loadConfig
   s <- sequence $ sources config
+  print s
   filtered <- removeOld s <* addNew s
   mail config $ intercalate (pack "\n") filtered
 
 -- | List of sources.
 sources :: Config -> [IO Text]
 sources config =
-  let policy = limitRetries 5 <> fibonacciBackoff 500000
+  let policy = limitRetries 10 <> fibonacciBackoff 500000
       handler = const $
         Handler $ \case
           HttpExceptionRequest _ _ -> pure True
@@ -77,7 +79,7 @@ sources config =
               print "apod" >> apod config,
               print "smbd" >> smbc,
               print "butter" >> butter,
-              print "pdl" >> pdl,
+              print "pdl" >> pdl uploadPdl,
               print "qwantz" >> qwantz,
               print "word" >> word,
               print "xkcd" >> xkcd
@@ -96,3 +98,10 @@ removeOld texts = do
 addNew :: [Text] -> IO ()
 addNew texts =
   void . runCommand . putObject "daily-reporter-cache" "cache" . RequestBodyLBS . B.pack . show $ fmap hash texts
+
+uploadPdl :: Text -> LB.ByteString -> IO Text
+uploadPdl name content = do
+  let url = "pdl" <> name <> ".png"
+      object = putObject "daily-reporter-cache" url $ RequestBodyLBS content
+  runCommand $ object { poAcl = Just AclPublicRead }
+  pure url
