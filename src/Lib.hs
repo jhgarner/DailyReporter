@@ -20,8 +20,8 @@ import Control.Monad.Catch
 import Control.Monad.Reader
 import Control.Monad.Trans.Resource
 import Control.Retry
-import qualified Data.ByteString.Lazy.Char8 as B (pack, unpack)
 import qualified Data.ByteString.Lazy as LB
+import qualified Data.ByteString.Lazy.Char8 as B (pack, unpack)
 import Data.Conduit.Binary
 import Data.Hashable
 import Data.Text (Text, intercalate, pack, unpack)
@@ -62,7 +62,6 @@ mailReport :: IO ()
 mailReport = do
   config <- loadConfig
   s <- sequence $ sources config
-  print s
   filtered <- removeOld s <* addNew s
   mail config $ intercalate (pack "\n") filtered
 
@@ -103,5 +102,5 @@ uploadPdl :: Text -> LB.ByteString -> IO Text
 uploadPdl name content = do
   let url = "pdl" <> name <> ".png"
       object = putObject "daily-reporter-cache" url $ RequestBodyLBS content
-  runCommand $ object { poAcl = Just AclPublicRead }
+  runCommand $ object {poAcl = Just AclPublicRead}
   pure url

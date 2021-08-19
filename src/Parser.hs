@@ -65,14 +65,14 @@ extractHtml' (Object guide) = do
   let attrs = maybe [] extractAttrs $ guide ^. at "attr"
   -- content <- html (TagString (unpack name)) <|> pure ""
   results <-
-      traverseWithKey
+    traverseWithKey
       ( \name v ->
           case splitOn "=" name of
             [name] -> chroot (TagString (unpack name) @: attrs) (extractHtml' v)
             [name, alias] -> do
-                rest <- chroot (TagString (unpack name) @: attrs) (extractHtml' v)
-                inner <- html $ TagString (unpack name) @: attrs
-                pure $ insert alias inner <$> rest
+              rest <- chroot (TagString (unpack name) @: attrs) (extractHtml' v)
+              inner <- html $ TagString (unpack name) @: attrs
+              pure $ insert alias inner <$> rest
       )
       $ guide & at "attr" .~ Nothing
   hmFake <- traverse matchAttrs $ guide ^. at "attr"
