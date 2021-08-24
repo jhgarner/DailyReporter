@@ -68,11 +68,13 @@ mailReport = do
 -- | List of sources.
 sources :: Config -> [IO Text]
 sources config =
-  let policy = limitRetries 10 <> fibonacciBackoff 500000
+  let policy = limitRetries 5 <> fibonacciBackoff 500000
       handler = const $
         Handler $ \case
           HttpExceptionRequest _ _ -> pure True
-   in recovering policy [handler] . const
+      runner _ RetryStatus { rsIterNumber = 4 } = pure "<p>This report failed to generate</p>"
+      runner io _ = io
+   in recovering policy [handler] . runner
         <$> [ print "weather" >> weather config,
               print "ec" >> ec,
               print "apod" >> apod config,

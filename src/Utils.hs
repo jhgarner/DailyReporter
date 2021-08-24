@@ -39,7 +39,7 @@ replaceOrEmpty acc k v = replace k v acc
 getHttp :: String -> IO Text
 getHttp url = do
   initReq <- parseRequest url
-  let req = setRequestResponseTimeout responseTimeoutNone initReq
+  let req = setRequestResponseTimeout (responseTimeoutMicro $ floor 3e7) initReq
   decodeUtf8With E.lenientDecode . getResponseBody <$> httpBS req
 
 -- | Returns latest item from RSS feed, but only if it's within the last 24
