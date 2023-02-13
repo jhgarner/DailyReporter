@@ -1,0 +1,154 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.1.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 6f4c39c7aa01d069586d8f61b1558aa142f9dea9bea576e0c75a08035f091341
+
+name:           DailyReporter
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/jhgarner/DailyReporter#readme>
+homepage:       https://github.com/jhgarner/DailyReporter#readme
+bug-reports:    https://github.com/jhgarner/DailyReporter/issues
+author:         Jackson Garner
+maintainer:     jhgarner@mymail.mines.edu
+copyright:      2018 Jackson Garner
+license:        MIT
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+    LICENSE
+
+source-repository head
+  type: git
+  location: https://github.com/jhgarner/DailyReporter
+
+library
+  exposed-modules:
+      Apod
+      Buttersafe
+      Config
+      Ec
+      Email
+      Lib
+      Parser
+      PDL
+      Qwantz
+      Smbc
+      Utils
+      Weather
+      Word
+      Xkcd
+  other-modules:
+      Paths_DailyReporter
+  hs-source-dirs:
+      src
+  build-depends:
+      aeson
+    , aws
+    , base >=4.7 && <5
+    , bytestring
+    , conduit-extra
+    , containers
+    , exceptions
+    , fast-tagsoup
+    , feed
+    , hashable
+    , http-conduit
+    , indexed-traversable
+    , lens
+    , lens-aeson
+    , mime-mail
+    , mime-mail-ses
+    , mtl
+    , recursion-schemes
+    , regex-posix
+    , resourcet
+    , retry
+    , scalpel
+    , tagsoup
+    , text
+    , time
+    , unordered-containers
+    , vector
+  default-language: Haskell2010
+
+executable DailyReporter-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_DailyReporter
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      DailyReporter
+    , aeson
+    , aws
+    , base >=4.7 && <5
+    , bytestring
+    , conduit-extra
+    , containers
+    , exceptions
+    , fast-tagsoup
+    , feed
+    , hashable
+    , http-conduit
+    , indexed-traversable
+    , lens
+    , lens-aeson
+    , mime-mail
+    , mime-mail-ses
+    , mtl
+    , recursion-schemes
+    , regex-posix
+    , resourcet
+    , retry
+    , scalpel
+    , tagsoup
+    , text
+    , time
+    , unordered-containers
+    , vector
+  default-language: Haskell2010
+
+test-suite DailyReporter-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_DailyReporter
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      DailyReporter
+    , aeson
+    , aws
+    , base >=4.7 && <5
+    , bytestring
+    , conduit-extra
+    , containers
+    , exceptions
+    , fast-tagsoup
+    , feed
+    , hashable
+    , http-conduit
+    , indexed-traversable
+    , lens
+    , lens-aeson
+    , mime-mail
+    , mime-mail-ses
+    , mtl
+    , recursion-schemes
+    , regex-posix
+    , resourcet
+    , retry
+    , scalpel
+    , tagsoup
+    , text
+    , time
+    , unordered-containers
+    , vector
+  default-language: Haskell2010

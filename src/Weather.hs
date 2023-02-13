@@ -49,7 +49,7 @@ response = getHttp . unpack . url
 url :: Config -> Text
 url Config {..} =
   let location = "/" <> long <> "," <> lat
-   in "https://api.darksky.net/forecast/" <> weatherApikey <> location
+   in "https://api.pirateweather.net/forecast/" <> weatherApikey <> location
 
 -- | Hardcoded TimeZone
 currentZone :: TimeZone

@@ -1,9 +1,6 @@
-.stack-work/
 bootstrap
 build/
-DailyReporter.cabal
 *~
 DailyReporter-exe*
-function.zip
 result
 config.json

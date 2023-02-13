@@ -48,6 +48,7 @@ dependencies:
 - fast-tagsoup
 - tagsoup
 - recursion-schemes
+- indexed-traversable
 
 library:
   source-dirs: src
