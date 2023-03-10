@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.1.
+-- This file has been generated from package.yaml by hpack version 0.35.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6f4c39c7aa01d069586d8f61b1558aa142f9dea9bea576e0c75a08035f091341
+-- hash: 34dd10e2f2d6d2abd656dd9a21beceb4722507062c0362b19f076ae229276fa1
 
 name:           DailyReporter
 version:        0.1.0.0
@@ -28,31 +28,35 @@ source-repository head
 
 library
   exposed-modules:
-      Apod
-      Buttersafe
       Config
-      Ec
-      Email
+      Fallible
       Lib
-      Parser
-      PDL
-      Qwantz
-      Smbc
+      Matrix.Class
+      Matrix.MatrixT
+      Parser.HtmlParser
+      Parser.JsonParser
+      Sources.Apod
+      Sources.Buttersafe
+      Sources.Ec
+      Sources.PDL
+      Sources.Qwantz
+      Sources.Smbc
+      Sources.Weather
+      Sources.Word
+      Sources.Xkcd
       Utils
-      Weather
-      Word
-      Xkcd
   other-modules:
       Paths_DailyReporter
   hs-source-dirs:
       src
   build-depends:
-      aeson
-    , aws
+      PyF
+    , aeson
     , base >=4.7 && <5
     , bytestring
     , conduit-extra
     , containers
+    , deriving-aeson
     , exceptions
     , fast-tagsoup
     , feed
@@ -61,11 +65,10 @@ library
     , indexed-traversable
     , lens
     , lens-aeson
-    , mime-mail
-    , mime-mail-ses
     , mtl
     , recursion-schemes
     , regex-posix
+    , req
     , resourcet
     , retry
     , scalpel
@@ -82,15 +85,16 @@ executable DailyReporter-exe
       Paths_DailyReporter
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -W
   build-depends:
       DailyReporter
+    , PyF
     , aeson
-    , aws
     , base >=4.7 && <5
     , bytestring
     , conduit-extra
     , containers
+    , deriving-aeson
     , exceptions
     , fast-tagsoup
     , feed
@@ -99,11 +103,10 @@ executable DailyReporter-exe
     , indexed-traversable
     , lens
     , lens-aeson
-    , mime-mail
-    , mime-mail-ses
     , mtl
     , recursion-schemes
     , regex-posix
+    , req
     , resourcet
     , retry
     , scalpel
@@ -124,12 +127,13 @@ test-suite DailyReporter-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       DailyReporter
+    , PyF
     , aeson
-    , aws
     , base >=4.7 && <5
     , bytestring
     , conduit-extra
     , containers
+    , deriving-aeson
     , exceptions
     , fast-tagsoup
     , feed
@@ -138,11 +142,10 @@ test-suite DailyReporter-test
     , indexed-traversable
     , lens
     , lens-aeson
-    , mime-mail
-    , mime-mail-ses
     , mtl
     , recursion-schemes
     , regex-posix
+    , req
     , resourcet
     , retry
     , scalpel

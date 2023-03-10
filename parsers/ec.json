@@ -2,8 +2,8 @@
     {
         "name": "img",
         "attr": {
-            "title": "*alt",
-            "src": "*img"
+            "src": "*img",
+            "title": "*alt"
         }
     }
 ]

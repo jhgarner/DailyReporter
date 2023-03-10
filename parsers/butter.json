@@ -2,16 +2,23 @@
     {
         "name": "div",
         "attr": {
-            "class": "post"
+            "id": "comic"
         },
         "inner": [
             {
                 "name": "img",
                 "attr": {
                     "src": "*img",
-                    "loading": "lazy"
+                    "alt": "*title"
                 }
             }
         ]
+    },
+    {
+        "name": "div",
+        "attr": {
+            "class": "entry"
+        },
+        "alias": "*quote"
     }
 ]

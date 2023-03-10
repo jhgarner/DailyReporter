@@ -1,108 +1,91 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeFamilies #-}
 
 module Lib
-  ( mailReport,
+  ( runReport,
   )
 where
 
-import Apod
-import qualified Aws
-import Aws.S3 as S3
-import Buttersafe
-import Config
-import Control.Lens
-import Control.Monad
-import Control.Monad.Catch
-import Control.Monad.Reader
-import Control.Monad.Trans.Resource
-import Control.Retry
-import qualified Data.ByteString.Lazy as LB
-import qualified Data.ByteString.Lazy.Char8 as B (pack, unpack)
-import Data.Conduit.Binary
-import Data.Hashable
-import Data.Text (Text, intercalate, pack, unpack)
-import Data.Text.Encoding
-import qualified Data.Text.IO as I
-import Ec
-import Email
-import Network.HTTP.Conduit (HttpException (HttpExceptionRequest), RequestBody (..), newManager, responseBody, tlsManagerSettings)
-import PDL
-import Parser
-import Qwantz
-import Smbc
-import Weather
-import Word
-import Xkcd
+import Config (Config (..), RoomId, loadConfig)
+import Control.Monad.Catch (MonadMask)
+import Control.Monad.Reader (MonadIO (..), forM_)
+import Data.Hashable (Hashable (hash))
+import Data.Map (Map, traverseWithKey, (!?))
+import Data.Text (Text)
+import qualified Data.Text.IO
+import Fallible
+  ( runWithRetriesEmpty,
+    runWithRetriesFallback,
+    runWithRetriesMaybe,
+  )
+import Matrix.Class (Matrix (..))
+import Matrix.MatrixT (runMatrix)
+import PyF (fmt)
+import Sources.Apod ( apod )
+import Sources.Buttersafe ( butter )
+import Sources.Ec ( ec )
+import Sources.PDL ( pdl )
+import Sources.Qwantz ( qwantz )
+import Sources.Smbc ( smbc )
+import Sources.Weather ( weather )
+import Sources.Word ( word )
+import Sources.Xkcd ( xkcd )
+import Utils (ifM, template)
+import Network.HTTP.Req (runReq, defaultHttpConfig)
 
---  TODO: Allow user config for sources.
---  TODO: Allow easier creation for new sources of standard RSS type.
+runReport :: IO ()
+runReport = do
+  config@Config {..} <- loadConfig
+  runReq defaultHttpConfig do
+    runMatrix deviceId password do
+      s <- sources config
+      let combined = zip s [0 ..]
+      forM_ combined $ \(text, id) -> runWithRetriesEmpty $ putMsg roomId (show id) text
 
-awsConfig = do
-  Config {..} <- loadConfig
-  creds <- Aws.makeCredentials (encodeUtf8 accessKey) (encodeUtf8 secretKey)
-  pure
-    Aws.Configuration
-      { timeInfo = Aws.Timestamp,
-        credentials = creds,
-        logger = Aws.defaultLog Aws.Warning,
-        proxy = Nothing
-      }
+sources :: (MonadIO m, MonadMask m, Matrix m) => Config -> m [Text]
+sources config@Config {..} =
+  traverse
+    (runSource roomId)
+    [ ("Weather", weather config),
+      ("Apod", apod apodApikey),
+      ("Xkcd", xkcd),
+      ("Ec", ec),
+      ("Smbc", smbc),
+      ("Buttersafe", butter),
+      ("PDL", pdl),
+      ("Qwantz", qwantz),
+      ("Word", word)
+    ]
 
-runCommand r = do
-  cfg <- awsConfig
-  let s3cfg = Aws.defServiceConfig :: S3.S3Configuration Aws.NormalQuery
-  Aws.simpleAws cfg s3cfg r
+runSource :: (MonadIO m, MonadMask m, Matrix m) => RoomId -> (Text, IO (Map Text Text)) -> m Text
+runSource roomId (name, paramActions) = do
+  liftIO $ putStrLn [fmt|Running {name}|]
+  html <- liftIO $ Data.Text.IO.readFile [fmt|templates/{name}.html|]
+  params <- runWithRetriesMaybe (liftIO paramActions)
+  case params of
+    Just params -> do
+      ifM
+        (isNewSection roomId (name, params))
+        do
+          runWithRetriesEmpty (writeCache roomId name params)
+          replacedParams <- runWithRetriesFallback params (replaceImgs params)
+          pure $ template html replacedParams
+        do pure ""
+    Nothing -> pure [fmt|<br/>Failed to generate a report for {name}<br/>|]
 
--- | Takes sources and compiles it into a single html. Then it emails it!
-mailReport :: IO ()
-mailReport = do
-  config <- loadConfig
-  s <- sequence $ sources config
-  filtered <- removeOld s <* addNew s
-  mail config $ intercalate (pack "\n") filtered
+isNewSection :: Matrix m => RoomId -> (Text, Map Text Text) -> m Bool
+isNewSection roomId (name, params) = do
+  cached <- getHash roomId name
+  pure $ cached /= show (hash params)
 
--- | List of sources.
-sources :: Config -> [IO Text]
-sources config =
-  let policy = limitRetries 5 <> fibonacciBackoff 500000
-      handler = const $
-        Handler $ \case
-          HttpExceptionRequest _ _ -> pure True
-      runner _ RetryStatus { rsIterNumber = 4 } = pure "<p>This report failed to generate</p>"
-      runner io _ = io
-   in recovering policy [handler] . runner
-        <$> [ print "weather" >> weather config,
-              print "ec" >> ec,
-              print "apod" >> apod config,
-              print "smbd" >> smbc,
-              print "butter" >> butter,
-              print "pdl" >> pdl uploadPdl,
-              print "qwantz" >> qwantz,
-              print "word" >> word,
-              print "xkcd" >> xkcd
-            ]
+writeCache :: Matrix m => Hashable a => RoomId -> Text -> a -> m ()
+writeCache roomId name value = putHash roomId name $ hash value
 
-removeOld :: [Text] -> IO [Text]
-removeOld texts = do
-  S3.GetObjectMemoryResponse _ rsp <- runCommand $ getObject "daily-reporter-cache" "cache"
-  let b = responseBody rsp
-  let cache = read @[Int] $ B.unpack b
-  return $
-    if length cache /= length texts
-      then texts
-      else fmap snd $ filter (\(h, t) -> h /= hash t) $ zip cache texts
-
-addNew :: [Text] -> IO ()
-addNew texts =
-  void . runCommand . putObject "daily-reporter-cache" "cache" . RequestBodyLBS . B.pack . show $ fmap hash texts
-
-uploadPdl :: Text -> LB.ByteString -> IO Text
-uploadPdl name content = do
-  let url = "pdl" <> name <> ".png"
-      object = putObject "daily-reporter-cache" url $ RequestBodyLBS content
-  runCommand $ object {poAcl = Just AclPublicRead}
-  pure url
+replaceImgs :: Matrix m => Map Text Text -> m (Map Text Text)
+replaceImgs = traverseWithKey replaceImg
+  where
+    replaceImg "*img" url = uploadImage url
+    replaceImg _ value = pure value

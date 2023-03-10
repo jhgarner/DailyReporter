@@ -34,10 +34,7 @@ dependencies:
 - scalpel
 - feed
 - containers
-- mime-mail-ses
-- mime-mail
 - hashable
-- aws
 - resourcet
 - mtl
 - conduit-extra
@@ -49,6 +46,9 @@ dependencies:
 - tagsoup
 - recursion-schemes
 - indexed-traversable
+- deriving-aeson
+- PyF
+- req
 
 library:
   source-dirs: src
@@ -64,6 +64,7 @@ executables:
     - -rtsopts
     # - -static
     - -with-rtsopts=-N
+    - -W
     dependencies:
     - DailyReporter
 

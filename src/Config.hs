@@ -1,31 +1,23 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Config where
 
-import Prelude hiding (readFile)
-import Data.Text
-import Data.ByteString
-import Data.Text.IO
-import Data.Aeson
-import GHC.Generics
-import System.Environment
+import Data.Aeson (FromJSON, decode)
+import Data.Text (Text)
 import GHC.Exts (fromString)
+import GHC.Generics (Generic)
+import System.Environment (getEnv)
+import Prelude hiding (readFile)
 
-data Person = Person
-  { name :: Maybe Text,
-    email :: Text
-  }
-  deriving (Show, Generic, FromJSON)
+newtype RoomId = RoomId Text
+  deriving (Generic, Show, FromJSON)
 
 data Config = Config
-  { fromName :: Maybe Text,
-    fromEmail :: Text,
-    to :: [Person],
-    subject :: Text,
-    accessKey :: Text,
-    secretKey :: Text,
-    apodApikey :: Text,
+  { apodApikey :: Text,
+    deviceId :: Text,
+    roomId :: RoomId,
+    password :: Text,
     weatherApikey :: Text,
     long :: Text,
     lat :: Text

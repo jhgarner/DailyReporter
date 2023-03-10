@@ -1,9 +1,8 @@
-{ mkDerivation, aeson, aws, base, bytestring, conduit-extra
-, containers, exceptions, fast-tagsoup, feed, hashable
-, http-conduit, indexed-traversable, lens, lens-aeson, lib
-, mime-mail, mime-mail-ses, mtl, recursion-schemes, regex-posix
-, resourcet, retry, scalpel, tagsoup, text, time
-, unordered-containers, vector
+{ mkDerivation, aeson, base, bytestring, conduit-extra, containers
+, deriving-aeson, exceptions, fast-tagsoup, feed, hashable
+, http-conduit, indexed-traversable, lens, lens-aeson, lib, mtl
+, PyF, recursion-schemes, regex-posix, req, resourcet, retry
+, scalpel, tagsoup, text, time, unordered-containers, vector
 }:
 mkDerivation {
   pname = "DailyReporter";
@@ -12,24 +11,24 @@ mkDerivation {
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    aeson aws base bytestring conduit-extra containers exceptions
-    fast-tagsoup feed hashable http-conduit indexed-traversable lens
-    lens-aeson mime-mail mime-mail-ses mtl recursion-schemes
-    regex-posix resourcet retry scalpel tagsoup text time
+    aeson base bytestring conduit-extra containers deriving-aeson
+    exceptions fast-tagsoup feed hashable http-conduit
+    indexed-traversable lens lens-aeson mtl PyF recursion-schemes
+    regex-posix req resourcet retry scalpel tagsoup text time
     unordered-containers vector
   ];
   executableHaskellDepends = [
-    aeson aws base bytestring conduit-extra containers exceptions
-    fast-tagsoup feed hashable http-conduit indexed-traversable lens
-    lens-aeson mime-mail mime-mail-ses mtl recursion-schemes
-    regex-posix resourcet retry scalpel tagsoup text time
+    aeson base bytestring conduit-extra containers deriving-aeson
+    exceptions fast-tagsoup feed hashable http-conduit
+    indexed-traversable lens lens-aeson mtl PyF recursion-schemes
+    regex-posix req resourcet retry scalpel tagsoup text time
     unordered-containers vector
   ];
   testHaskellDepends = [
-    aeson aws base bytestring conduit-extra containers exceptions
-    fast-tagsoup feed hashable http-conduit indexed-traversable lens
-    lens-aeson mime-mail mime-mail-ses mtl recursion-schemes
-    regex-posix resourcet retry scalpel tagsoup text time
+    aeson base bytestring conduit-extra containers deriving-aeson
+    exceptions fast-tagsoup feed hashable http-conduit
+    indexed-traversable lens lens-aeson mtl PyF recursion-schemes
+    regex-posix req resourcet retry scalpel tagsoup text time
     unordered-containers vector
   ];
   homepage = "https://github.com/jhgarner/DailyReporter#readme";
