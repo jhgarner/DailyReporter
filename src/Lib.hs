@@ -17,9 +17,9 @@ import Data.Map (Map, traverseWithKey, (!?))
 import Data.Text (Text)
 import qualified Data.Text.IO
 import Fallible
-  ( runWithRetriesEmpty,
+  ( allowFailureOf,
     runWithRetriesFallback,
-    runWithRetriesMaybe,
+    detectFailuresOf, orFallbackTo,
   )
 import Matrix.Class (Matrix (..))
 import Matrix.MatrixT (runMatrix)
@@ -43,7 +43,7 @@ runReport = do
     runMatrix deviceId password do
       s <- sources config
       let combined = zip s [0 ..]
-      forM_ combined $ \(text, id) -> runWithRetriesEmpty $ putMsg roomId (show id) text
+      forM_ combined $ \(text, id) -> allowFailureOf $ putMsg roomId (show id) text
 
 sources :: (MonadIO m, MonadMask m, Matrix m) => Config -> m [Text]
 sources config@Config {..} =
@@ -64,14 +64,14 @@ runSource :: (MonadIO m, MonadMask m, Matrix m) => RoomId -> (Text, IO (Map Text
 runSource roomId (name, paramActions) = do
   liftIO $ putStrLn [fmt|Running {name}|]
   html <- liftIO $ Data.Text.IO.readFile [fmt|templates/{name}.html|]
-  params <- runWithRetriesMaybe (liftIO paramActions)
+  params <- detectFailuresOf $ liftIO paramActions
   case params of
     Just params -> do
       ifM
-        (isNewSection roomId (name, params))
+        (isNewSection roomId (name, params) `orFallbackTo` True)
         do
-          runWithRetriesEmpty (writeCache roomId name params)
-          replacedParams <- runWithRetriesFallback params (replaceImgs params)
+          allowFailureOf $ writeCache roomId name params
+          replacedParams <- replaceImgs params `orFallbackTo` params
           pure $ template html replacedParams
         do pure ""
     Nothing -> pure [fmt|<br/>Failed to generate a report for {name}<br/>|]

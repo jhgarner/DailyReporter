@@ -18,14 +18,17 @@ import Control.Retry
   )
 import Network.HTTP.Simple (HttpException)
 
-runWithRetriesEmpty :: (MonadIO m, MonadMask m, Monoid a) => m a -> m a
-runWithRetriesEmpty = runWithRetriesFallback mempty
+allowFailureOf :: (MonadIO m, MonadMask m, Monoid a) => m a -> m a
+allowFailureOf = runWithRetriesFallback mempty
 
 runWithRetriesFallback :: (MonadIO m, MonadMask m) => a -> m a -> m a
 runWithRetriesFallback fallback action = runWithRetries action (pure fallback)
 
-runWithRetriesMaybe :: (MonadIO m, MonadMask m) => m a -> m (Maybe a)
-runWithRetriesMaybe action = runWithRetries (fmap Just action) (pure Nothing)
+orFallbackTo :: (MonadIO m, MonadMask m) => m a -> a -> m a
+orFallbackTo = flip runWithRetriesFallback
+
+detectFailuresOf :: (MonadIO m, MonadMask m) => m a -> m (Maybe a)
+detectFailuresOf action = runWithRetries (fmap Just action) (pure Nothing)
 
 runWithRetries :: (MonadIO m, MonadMask m) => m a -> m a -> m a
 runWithRetries action onFailure =
