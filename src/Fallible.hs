@@ -16,7 +16,7 @@ import Control.Retry
     logRetries,
     recovering,
   )
-import Network.HTTP.Simple (HttpException)
+import Network.HTTP.Req (HttpException)
 
 allowFailureOf :: (MonadIO m, MonadMask m, Monoid a) => m a -> m a
 allowFailureOf = runWithRetriesFallback mempty
