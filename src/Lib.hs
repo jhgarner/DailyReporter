@@ -1,6 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -10,42 +10,54 @@ module Lib
 where
 
 import Config (Config (..), RoomId, loadConfig)
-import Control.Monad.Catch (MonadMask)
-import Control.Monad.Reader (MonadIO (..), forM_)
-import Data.Hashable (Hashable (hash))
-import Data.Map (Map, traverseWithKey, (!?))
-import Data.Text (Text)
-import qualified Data.Text.IO
-import Fallible
-  ( allowFailureOf,
-    runWithRetriesFallback,
-    detectFailuresOf, orFallbackTo,
+import Fallible.Retryable
+  ( Retryable,
+    allowFailureOf,
+    detectFailuresOf,
+    orFallbackTo,
+    runRetryableTimer,
   )
-import Matrix.Class (Matrix (..))
-import Matrix.MatrixT (runMatrix)
-import PyF (fmt)
-import Sources.Apod ( apod )
-import Sources.Buttersafe ( butter )
-import Sources.Ec ( ec )
-import Sources.PDL ( pdl )
-import Sources.Qwantz ( qwantz )
-import Sources.Smbc ( smbc )
-import Sources.Weather ( weather )
-import Sources.Word ( word )
-import Sources.Xkcd ( xkcd )
-import Utils (ifM, template)
-import Network.HTTP.Req (runReq, defaultHttpConfig)
+import File.Class
+import File.Filesystem
+import Logging.Errors
+import Logging.Info
+import Matrix.Class
+import Matrix.Debug (runDebugMatrix)
+import Matrix.MatrixT
+import Network.Class
+import Network.Network
+import Sources.Apod (apod)
+import Sources.Buttersafe (butter)
+import Sources.Ec (ec)
+import Sources.PDL (pdl)
+import Sources.Qwantz (qwantz)
+import Sources.Smbc (smbc)
+import Sources.Weather (weather)
+import Sources.Word (word)
+import Sources.Xkcd (xkcd)
 
 runReport :: IO ()
-runReport = do
-  config@Config {..} <- loadConfig
-  runReq defaultHttpConfig do
-    runMatrix deviceId password do
-      s <- sources config
-      let combined = zip s [0 ..]
-      forM_ combined $ \(text, id) -> allowFailureOf $ putMsg roomId (show id) text
+runReport = runEff do
+  config@Config {..} <- input
+  s <- sources config
+  let combined = zip s [0 ..]
+  forM_ combined $ \(text, id) -> allowFailureOf $ putMsg roomId (pack $ show id) text
 
-sources :: (MonadIO m, MonadMask m, Matrix m) => Config -> m [Text]
+runEff :: Eff _ a -> IO a
+runEff =
+  runIOE
+    . loadConfig
+    . printInfoStream
+    . printErrorStream
+    . runRetryableTimer isRecoverable
+    . runWithFilesystem
+    . runOnInternet
+    -- Uncomment this line to us a fake matrix effect
+    -- . runDebugMatrix
+    -- Uncomment this line to login to matrix and run a real version
+    . loginMatrix . runRealMatrix
+
+sources :: [Matrix, Network, File, Retryable HttpException, InfoLog] :>> es => Config -> Eff es [Text]
 sources config@Config {..} =
   traverse
     (runSource roomId)
@@ -60,11 +72,15 @@ sources config@Config {..} =
       ("Word", word)
     ]
 
-runSource :: (MonadIO m, MonadMask m, Matrix m) => RoomId -> (Text, IO (Map Text Text)) -> m Text
+runSource ::
+  [Matrix, Network, File, Retryable HttpException, InfoLog] :>> es =>
+  RoomId ->
+  (Text, Eff (NetworkError : es) (Map Text Text)) ->
+  Eff es Text
 runSource roomId (name, paramActions) = do
-  liftIO $ putStrLn [fmt|Running {name}|]
-  html <- liftIO $ Data.Text.IO.readFile [fmt|templates/{name}.html|]
-  params <- detectFailuresOf $ liftIO paramActions
+  logInfo [f|Running {name}|]
+  html <- decodeUtf8 <$> getFile [f|templates/{name}.html|]
+  params <- detectFailuresOf paramActions
   case params of
     Just params -> do
       ifM
@@ -74,18 +90,21 @@ runSource roomId (name, paramActions) = do
           replacedParams <- replaceImgs params `orFallbackTo` params
           pure $ template html replacedParams
         do pure ""
-    Nothing -> pure [fmt|<br/>Failed to generate a report for {name}<br/>|]
+    Nothing -> pure [f|<br/>Failed to generate a report for {name}<br/>|]
 
-isNewSection :: Matrix m => RoomId -> (Text, Map Text Text) -> m Bool
+template :: Text -> Map Text Text -> Text
+template = ifoldr' replace
+
+isNewSection :: [Matrix, NetworkError] :>> es => RoomId -> (Text, Map Text Text) -> Eff es Bool
 isNewSection roomId (name, params) = do
   cached <- getHash roomId name
   pure $ cached /= show (hash params)
 
-writeCache :: Matrix m => Hashable a => RoomId -> Text -> a -> m ()
+writeCache :: [Matrix, NetworkError] :>> es => Hashable a => RoomId -> Text -> a -> Eff es ()
 writeCache roomId name value = putHash roomId name $ hash value
 
-replaceImgs :: Matrix m => Map Text Text -> m (Map Text Text)
-replaceImgs = traverseWithKey replaceImg
+replaceImgs :: [Matrix, NetworkError] :>> es => Map Text Text -> Eff es (Map Text Text)
+replaceImgs = itraverse replaceImg
   where
     replaceImg "*img" url = uploadImage url
     replaceImg _ value = pure value

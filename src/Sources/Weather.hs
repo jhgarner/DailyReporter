@@ -1,14 +1,9 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeApplications #-}
 
 module Sources.Weather (weather) where
 
 import Config (Config (..))
-import Data.Map (Map, update)
-import Data.Maybe (fromMaybe)
-import Data.Text (Text, pack, unpack)
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Data.Time.Format (defaultTimeLocale, formatTime)
 import Data.Time.LocalTime
@@ -17,25 +12,18 @@ import Data.Time.LocalTime
     utcToZonedTime,
   )
 import Parser.JsonParser (extractJson)
-import PyF (fmt)
 import Text.Read (readMaybe)
-import Utils (getHttp)
-import Data.Text.Encoding (decodeUtf8)
-import qualified Data.ByteString
-import Data.ByteString (ByteString)
+import Network.Class
+import File.Class
 
-weather :: Config -> IO (Map Text Text)
-weather config = do
-  w <- response config
-  parser <- Data.ByteString.readFile "parsers/weather.json"
+weather :: [Network, File, NetworkError] :>> es => Config -> Eff es (Map Text Text)
+weather Config{..} = do
+  w <- get (https "api.pirateweather.net"/:"forecast"/:weatherApikey/:[f|{long},{lat}|]) mempty
+  parser <- getFile "parsers/weather.json"
   let params1 = fromMaybe mempty $ extractJson parser w
   let params2 = update (Just . getTime) "*tht" params1
   let params = update (Just . getTime) "*tlt" params2
   pure params
-
--- | Grabs the json from the url for darksky api. Uses weather configuration.
-response :: Config -> IO ByteString
-response Config {..} = getHttp [fmt|https://api.pirateweather.net/forecast/{weatherApikey}/{long},{lat}|]
 
 -- | Hardcoded TimeZone
 currentZone :: TimeZone

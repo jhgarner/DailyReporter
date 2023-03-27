@@ -1,106 +1,83 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module Matrix.MatrixT (runMatrix) where
+module Matrix.MatrixT (runRealMatrix, loginMatrix) where
 
 import Config (RoomId (RoomId))
-import Control.Monad.Catch (MonadCatch, MonadMask, MonadThrow)
-import Control.Monad.IO.Class (MonadIO (liftIO))
-import Control.Monad.Reader (ReaderT (runReaderT))
-import Control.Monad.Reader.Class (MonadReader, asks)
 import Data.Aeson (decodeStrict')
-import Data.ByteString (ByteString)
-import Data.Foldable (foldl')
-import Data.Hashable (Hashable (hash))
-import Data.Text (Text, splitOn, unpack)
-import Data.Text.Encoding (encodeUtf8)
-import Deriving.Aeson.Stock
-import GHC.Generics (Generic)
+import Fallible.Retryable (Retryable, orFallbackTo)
 import Matrix.Class (Matrix (..))
-import Network.HTTP.Client.Conduit (RequestBody (RequestBodyBS))
-import Network.HTTP.Req
-import Network.HTTP.Simple (Request, getResponseBody, httpBS, httpJSON, parseRequestThrow_, setRequestBearerAuth, setRequestBody, setRequestBodyJSON, setRequestHeader)
-import PyF (fmt)
-
-newtype MatrixT m a = MatrixT {unMatrixT :: ReaderT LoginResponse m a}
-  deriving (Functor, Applicative, Monad, MonadIO, MonadReader LoginResponse, MonadThrow, MonadCatch, MonadMask, MonadHttp)
+import Network.Class
+import Text.URI (URI (uriScheme), mkURI)
+import Text.URI.QQ (scheme)
+import Deriving.Aeson (UnwrapUnaryRecords)
 
 -- Used to actually communicate with Matrix
-instance MonadHttp m => Matrix (MatrixT m) where
-  uploadImage from = do
-    SessionToken token <- asks accessToken
-    image <- getResponseBody <$> httpBS (parseRequestThrow_ $ unpack from)
-    let imageType = last $ splitOn "." from
-    let contentTypeHeader = header "Content-Type" [fmt|image/{imageType}|]
-    let authHeader = oAuth2Bearer $ encodeUtf8 token
-    response <- req POST (mkRequest "media/v3/upload") (ReqBodyBs image) jsonResponse $ authHeader <> contentTypeHeader
-    pure $ contentUri $ responseBody response
+runRealMatrix :: forall es. [Input LoginResponse, Network] :>> es => Eff (Matrix : es) ~> Eff es
+runRealMatrix = interpret handler
+  where
+    handler :: forall esSend. (Handling esSend Matrix es) => Matrix (Eff esSend) ~> Eff es
+    handler (UploadImage from) = do
+      let Just uri = mkURI from
+      let withScheme = uri {uriScheme = Just [scheme|https|]}
+      let (url, _) = fromJust $ useHttpsURI withScheme
+      image <- sendHandler @esSend $ Get url mempty
+      let imageType = last $ splitOn "." from
+      let contentType = header "Content-Type" [f|image/{imageType}|]
+      auth <- getAuth
+      response <- sendHandler @esSend $ Post (baseUrl /: "media" /: "v3" /: "upload") (ReqBodyBs image) (auth <> contentType)
+      pure $ contentUri response
+    handler (GetHash roomId key) = do
+      auth <- getAuth
+      response <- sendHandler @esSend $ Get (room roomId /: "state" /: hashEventType /: key) auth
+      pure $ maybe "0" extractHash $ decodeStrict' response
+    handler (PutHash roomId key toHash) = do
+      auth <- getAuth
+      sendHandler @esSend $ Put (room roomId /: "state" /: hashEventType /: key) (Hashes $ show $ hash toHash) auth
+    handler (PutMsg roomId txnId "") = pure () -- Don't send empty messages
+    handler (PutMsg roomId txnId contents) = do
+      auth <- getAuth
+      sendHandler @esSend $ Put (room roomId /: "send" /: "m.room.message" /: txnId) msg auth
+      where
+        msg =
+          Msg
+            { body = contents,
+              format = "org.matrix.custom.html",
+              formattedBody = contents,
+              msgtype = "m.text"
+            }
 
-  getHash roomId key = do
-    token <- asks accessToken
-    response <- get token [fmt|{room roomId}/state/{hashEventType}/{key}|]
-    pure $ maybe "0" extractHash $ decodeStrict' response
+getAuth :: Input LoginResponse :> es => Eff es (Option Https)
+getAuth = inputs $ oAuth2Bearer . encodeUtf8 . token . accessToken
 
-  putHash roomId key toHash = do
-    token <- asks accessToken
-    put token [fmt|{room roomId}/state/{hashEventType}/{key}|] $ Hashes $ show $ hash toHash
-
-  putMsg roomId txnId "" = pure () -- Don't send empty messages
-  putMsg roomId txnId contents = do
-    token <- asks accessToken
-    put token [fmt|{room roomId}/send/m.room.message/{txnId}|] msg
-    where
-      msg =
-        Msg
-          { body = contents,
-            format = "org.matrix.custom.html",
-            formattedBody = contents,
-            msgtype = "m.text"
+loginMatrix ::
+  (HasField "deviceId" config Text, HasField "password" config Text, [Retryable HttpException, Network, Input config] :>> es) =>
+  Eff (Input LoginResponse : es) ~> Eff es
+loginMatrix actions = do
+  deviceId <- inputs $ getField @"deviceId"
+  password <- inputs $ getField @"password"
+  let body =
+        LoginRequest
+          { identifier =
+              Identifier
+                { idType = "m.id.user",
+                  user = "dailyreporterbot"
+                },
+            initialDeviceDisplayName = "bot",
+            password = password,
+            loginRequestDeviceId = deviceId,
+            loginRequestType = "m.login.password"
           }
+  loginResponse <- post (baseUrl /: "client" /: "v3" /: "login") (ReqBodyJson body) mempty `orFallbackTo` error "Bad"
+  runInputConst loginResponse actions
 
-runMatrix :: MonadHttp m => Text -> Text -> MatrixT m a -> m a
-runMatrix deviceId password (MatrixT action) = do
-  loginResponse <- req POST (mkRequest "client/v3/login") (ReqBodyJson body) jsonResponse mempty
-  runReaderT action $ responseBody loginResponse
-  where
-    body =
-      LoginRequest
-        { identifier =
-            Identifier
-              { idType = "m.id.user",
-                user = "dailyreporterbot"
-              },
-          initialDeviceDisplayName = "bot",
-          password = password,
-          loginRequestDeviceId = deviceId,
-          loginRequestType = "m.login.password"
-        }
+room :: RoomId -> Url Https
+room (RoomId roomId) = baseUrl /: "client" /: "v3" /: "rooms" /: roomId
 
-get :: MonadHttp m => SessionToken -> Text -> m ByteString
-get (SessionToken token) target = do
-  response <- req GET (mkRequest target) NoReqBody bsResponse (oAuth2Bearer (encodeUtf8 token))
-  pure $ responseBody response
+baseUrl :: Url 'Https
+baseUrl = https "matrix.org" /: "_matrix"
 
-put :: (MonadHttp m, ToJSON body, FromJSON a, Show a) => SessionToken -> Text -> body -> m a
-put (SessionToken token) target body = do
-  response <- req PUT (mkRequest target) (ReqBodyJson body) jsonResponse (oAuth2Bearer (encodeUtf8 token))
-  liftIO $ print response
-  pure $ responseBody response
-
-mkRequest :: Text -> Url Https
-mkRequest path = foldl' (/:) baseUrl splitPath
-  where
-    baseUrl = https "matrix.org" /: "_matrix"
-    splitPath = splitOn "/" path
-
-room :: RoomId -> Text
-room (RoomId roomId) = [fmt|client/v3/rooms/{roomId}|]
-
-hashEventType :: String
+hashEventType :: Text
 hashEventType = "com.gmail.jkrmnj.hashes"
 
 data LoginRequest = LoginRequest
@@ -142,6 +119,6 @@ newtype Content = Content {contentUri :: Text}
   deriving (Generic, Show)
   deriving (FromJSON) via Snake Content
 
-newtype SessionToken = SessionToken Text
+newtype SessionToken = SessionToken {token :: Text}
   deriving (Generic, Show)
-  deriving (FromJSON) via Vanilla SessionToken
+  deriving (FromJSON) via CustomJSON '[UnwrapUnaryRecords] SessionToken

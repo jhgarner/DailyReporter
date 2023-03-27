@@ -1,9 +1,18 @@
 [
     {
-        "name": "img",
+        "name": "div",
         "attr": {
-            "src": "*img",
-            "alt": "*alt"
-        }
+            "id": "comic"
+        },
+        "inner": [
+            {
+                "name": "img",
+                "attr": {
+                    "src": "*img",
+                    "alt": "*alt",
+                    "title": "*title"
+                }
+            }
+        ]
     }
 ]

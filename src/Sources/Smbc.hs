@@ -1,15 +1,11 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Sources.Smbc (smbc) where
 
-import Data.ByteString (ByteString, readFile)
-import Data.Map (Map, insert)
-import Data.Text (Text)
 import Parser.HtmlParser (extractHtml)
-import Utils (getTitleAndSummary)
+import Network.Class
+import File.Class
 
-smbc :: IO (Map Text Text)
+smbc :: [Network, File, NetworkError] :>> es => Eff es (Map Text Text)
 smbc = do
-  guide <- Data.ByteString.readFile "parsers/smbc.json"
-  (title, summary) <- getTitleAndSummary "https://www.smbc-comics.com/rss.php"
+  guide <- getFile "parsers/smbc.json"
+  (title, summary) <- getTitleAndSummary $ https "smbc-comics.com"/:"rss.php"
   pure $ insert "*title" title $ extractHtml guide summary

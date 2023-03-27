@@ -1,15 +1,12 @@
-{-# LANGUAGE OverloadedStrings #-}
 
 module Sources.Buttersafe (butter) where
 
-import qualified Data.ByteString
-import Data.Map (Map)
-import Data.Text (Text)
 import Parser.HtmlParser (extractHtml)
-import Utils (getHttp)
+import File.Class
+import Network.Class
 
-butter :: IO (Map Text Text)
+butter :: [Network, File, NetworkError] :>> es => Eff es (Map Text Text)
 butter = do
-  html <- getHttp "http://buttersafe.com"
-  guide <- Data.ByteString.readFile "parsers/butter.json"
+  html <- get (https "buttersafe.com") mempty
+  guide <- getFile "parsers/butter.json"
   pure $ extractHtml guide html

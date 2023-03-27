@@ -8,7 +8,6 @@ import Data.Text (Text)
 import GHC.Exts (fromString)
 import GHC.Generics (Generic)
 import System.Environment (getEnv)
-import Prelude hiding (readFile)
 
 newtype RoomId = RoomId Text
   deriving (Generic, Show, FromJSON)
@@ -24,8 +23,8 @@ data Config = Config
   }
   deriving (Show, Generic, FromJSON)
 
-loadConfig :: IO Config
-loadConfig = do
-  file <- getEnv "CONFIG"
+loadConfig :: IOE :> es => Eff (Input Config : es) a -> Eff es a
+loadConfig = interpret \Input -> do
+  file <- liftIO $ getEnv "CONFIG"
   let Just config = decode $ fromString file
   pure config

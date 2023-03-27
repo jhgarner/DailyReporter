@@ -11,5 +11,6 @@ pkgs.mkShell {
     pkgs.gcc
     pkgs.icu
     pkgs.zlib
+    pkgs.haskellPackages.hspec-discover
   ];
 }

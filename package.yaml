@@ -21,7 +21,6 @@ extra-source-files:
 description:         Please see the README on GitHub at <https://github.com/jhgarner/DailyReporter#readme>
 
 dependencies:
-- base >= 4.7 && < 5
 - retry
 - exceptions
 - aeson
@@ -49,9 +48,42 @@ dependencies:
 - deriving-aeson
 - PyF
 - req
+- cleff
+- cleff-plugin
+- modern-uri
+- unliftio
+
+language: GHC2021
+
+default-extensions:
+- BlockArguments
+- TypeFamilies
+- GADTs
+- LambdaCase
+- TupleSections
+- OverloadedStrings
+- DataKinds
+
+
+internal-libraries:
+  CustomPrelude:
+    source-dirs: prelude
+    dependencies:
+      - name: base
+        version: ">= 4.7 && < 5"
+        mixin:
+        - (Prelude as BasePrelude)
+        - ""
 
 library:
   source-dirs: src
+  ghc-options: -fplugin=Cleff.Plugin
+  dependencies:
+  - name: base
+    version: ">= 4.7 && < 5"
+    mixin:
+    - hiding (Prelude)
+  - name: CustomPrelude
 
 executables:
   DailyReporter-exe:
@@ -66,6 +98,7 @@ executables:
     - -with-rtsopts=-N
     - -W
     dependencies:
+    - base >= 4.7 && < 5
     - DailyReporter
 
 tests:
@@ -77,4 +110,8 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - base >= 4.7 && < 5
     - DailyReporter
+    - hspec
+    build-tools:
+    - hspec-discover

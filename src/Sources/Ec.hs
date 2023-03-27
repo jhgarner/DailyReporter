@@ -1,15 +1,11 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Sources.Ec (ec) where
 
-import qualified Data.ByteString
-import Data.Map (Map, insert)
-import Data.Text (Text)
 import Parser.HtmlParser (extractHtml)
-import Utils (getTitleAndSummary)
+import File.Class
+import Network.Class
 
-ec :: IO (Map Text Text)
+ec :: [Network, File, NetworkError] :>> es => Eff es (Map Text Text)
 ec = do
-  guide <- Data.ByteString.readFile "parsers/ec.json"
-  (title, summary) <- getTitleAndSummary "https://existentialcomics.com/rss.xml"
-  pure $ insert "*title" title $ extractHtml guide summary
+  html <- get (https "existentialcomics.com") mempty
+  guide <- getFile "parsers/ec.json"
+  pure $ extractHtml guide html

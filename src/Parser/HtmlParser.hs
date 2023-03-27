@@ -1,29 +1,14 @@
-{-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
 
 module Parser.HtmlParser (extractHtml) where
 
-import Control.Monad (join)
 import Data.Aeson
   ( FromJSON (parseJSON),
     withObject,
     (.:), eitherDecodeStrict, (.:?), (.!=),
   )
-import Data.ByteString (ByteString)
-import Data.Foldable (fold)
-import Data.Foldable.WithIndex (ifoldMap')
-import Data.Functor.Foldable (Recursive (cata))
-import Data.Functor.Foldable.TH (MakeBaseFunctor (makeBaseFunctor))
-import Data.Map (Map, singleton)
-import Data.Maybe (fromMaybe)
-import Data.Monoid (Ap (..))
 import Data.Text (Text, isPrefixOf, unpack)
 import Data.Vector (toList)
 import Text.HTML.Scalpel
@@ -89,4 +74,6 @@ matchAttrs :: Selector -> Map Text Text -> Scraper Text (Map Text Text)
 matchAttrs selector tagAttrs = do
   ifoldMap' matchIt tagAttrs
   where
-    matchIt k v = singleton v <$> attr (unpack k) selector
+    matchIt k v
+      | "*" `isPrefixOf` v = singleton v <$> attr (unpack k) selector
+      | otherwise = mempty

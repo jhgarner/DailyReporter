@@ -1,10 +1,10 @@
-cabal-version: 1.12
+cabal-version: 2.0
 
 -- This file has been generated from package.yaml by hpack version 0.35.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 34dd10e2f2d6d2abd656dd9a21beceb4722507062c0362b19f076ae229276fa1
+-- hash: 654d09cd329042c3273cbfd5ad3d12074e30ea3f0cb4ed6d21fcf67ccccd9ed8
 
 name:           DailyReporter
 version:        0.1.0.0
@@ -29,10 +29,18 @@ source-repository head
 library
   exposed-modules:
       Config
-      Fallible
+      Fallible.Retryable
+      Fallible.Throwing
+      File.Class
+      File.Filesystem
       Lib
+      Logging.Errors
+      Logging.Info
       Matrix.Class
+      Matrix.Debug
       Matrix.MatrixT
+      Network.Class
+      Network.Network
       Parser.HtmlParser
       Parser.JsonParser
       Sources.Apod
@@ -44,16 +52,29 @@ library
       Sources.Weather
       Sources.Word
       Sources.Xkcd
-      Utils
   other-modules:
+      Paths_DailyReporter
+  autogen-modules:
       Paths_DailyReporter
   hs-source-dirs:
       src
+  default-extensions:
+      BlockArguments
+      TypeFamilies
+      GADTs
+      LambdaCase
+      TupleSections
+      OverloadedStrings
+      DataKinds
+  ghc-options: -fplugin=Cleff.Plugin
   build-depends:
-      PyF
+      CustomPrelude
+    , PyF
     , aeson
     , base >=4.7 && <5
     , bytestring
+    , cleff
+    , cleff-plugin
     , conduit-extra
     , containers
     , deriving-aeson
@@ -65,6 +86,7 @@ library
     , indexed-traversable
     , lens
     , lens-aeson
+    , modern-uri
     , mtl
     , recursion-schemes
     , regex-posix
@@ -75,16 +97,83 @@ library
     , tagsoup
     , text
     , time
+    , unliftio
     , unordered-containers
     , vector
-  default-language: Haskell2010
+  mixins:
+      base hiding (Prelude)
+  default-language: GHC2021
+
+library CustomPrelude
+  exposed-modules:
+      Prelude
+  other-modules:
+      Paths_DailyReporter
+  autogen-modules:
+      Paths_DailyReporter
+  hs-source-dirs:
+      prelude
+  default-extensions:
+      BlockArguments
+      TypeFamilies
+      GADTs
+      LambdaCase
+      TupleSections
+      OverloadedStrings
+      DataKinds
+  build-depends:
+      PyF
+    , aeson
+    , base >=4.7 && <5
+    , bytestring
+    , cleff
+    , cleff-plugin
+    , conduit-extra
+    , containers
+    , deriving-aeson
+    , exceptions
+    , fast-tagsoup
+    , feed
+    , hashable
+    , http-conduit
+    , indexed-traversable
+    , lens
+    , lens-aeson
+    , modern-uri
+    , mtl
+    , recursion-schemes
+    , regex-posix
+    , req
+    , resourcet
+    , retry
+    , scalpel
+    , tagsoup
+    , text
+    , time
+    , unliftio
+    , unordered-containers
+    , vector
+  mixins:
+      base (Prelude as BasePrelude)
+    , base 
+  default-language: GHC2021
 
 executable DailyReporter-exe
   main-is: Main.hs
   other-modules:
       Paths_DailyReporter
+  autogen-modules:
+      Paths_DailyReporter
   hs-source-dirs:
       app
+  default-extensions:
+      BlockArguments
+      TypeFamilies
+      GADTs
+      LambdaCase
+      TupleSections
+      OverloadedStrings
+      DataKinds
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -W
   build-depends:
       DailyReporter
@@ -92,6 +181,8 @@ executable DailyReporter-exe
     , aeson
     , base >=4.7 && <5
     , bytestring
+    , cleff
+    , cleff-plugin
     , conduit-extra
     , containers
     , deriving-aeson
@@ -103,6 +194,7 @@ executable DailyReporter-exe
     , indexed-traversable
     , lens
     , lens-aeson
+    , modern-uri
     , mtl
     , recursion-schemes
     , regex-posix
@@ -113,24 +205,40 @@ executable DailyReporter-exe
     , tagsoup
     , text
     , time
+    , unliftio
     , unordered-containers
     , vector
-  default-language: Haskell2010
+  default-language: GHC2021
 
 test-suite DailyReporter-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      SourcesSpec
+      Paths_DailyReporter
+  autogen-modules:
       Paths_DailyReporter
   hs-source-dirs:
       test
+  default-extensions:
+      BlockArguments
+      TypeFamilies
+      GADTs
+      LambdaCase
+      TupleSections
+      OverloadedStrings
+      DataKinds
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-tool-depends:
+      hspec-discover:hspec-discover
   build-depends:
       DailyReporter
     , PyF
     , aeson
     , base >=4.7 && <5
     , bytestring
+    , cleff
+    , cleff-plugin
     , conduit-extra
     , containers
     , deriving-aeson
@@ -138,10 +246,12 @@ test-suite DailyReporter-test
     , fast-tagsoup
     , feed
     , hashable
+    , hspec
     , http-conduit
     , indexed-traversable
     , lens
     , lens-aeson
+    , modern-uri
     , mtl
     , recursion-schemes
     , regex-posix
@@ -152,6 +262,7 @@ test-suite DailyReporter-test
     , tagsoup
     , text
     , time
+    , unliftio
     , unordered-containers
     , vector
-  default-language: Haskell2010
+  default-language: GHC2021
