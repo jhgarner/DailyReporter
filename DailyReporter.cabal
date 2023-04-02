@@ -4,7 +4,7 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 654d09cd329042c3273cbfd5ad3d12074e30ea3f0cb4ed6d21fcf67ccccd9ed8
+-- hash: 18258f32d99ada32acc4f3542814058e32181376461571f247fb2fe7b3c23e85
 
 name:           DailyReporter
 version:        0.1.0.0
@@ -214,7 +214,9 @@ test-suite DailyReporter-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      NetworkSpec
       SourcesSpec
+      ThrowingSpec
       Paths_DailyReporter
   autogen-modules:
       Paths_DailyReporter

@@ -1,4 +1,3 @@
-
 module Sources.Qwantz (qwantz) where
 
 import Parser.HtmlParser (extractHtml)
