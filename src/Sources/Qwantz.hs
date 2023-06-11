@@ -1,12 +1,10 @@
 module Sources.Qwantz (qwantz) where
 
-import Parser.HtmlParser (extractHtml)
-import Network.Class
-import File.Class
+import Sources.Lib
 
-qwantz :: [Network, File, NetworkError] :>> es => Eff es (Map Text Text)
-qwantz = do
-  guide <- getFile "parsers/qwantz.json"
-  (title, summary) <- getTitleAndSummary $ https "www.qwantz.com"/:"rssfeed.php"
+qwantz :: _ => Source es
+qwantz = makeSource "Qwantz" do
   -- Unfortunately the title is only in the RSS feed...
-  pure $ insert "*title" title $ extractHtml guide summary
+  (title, summary) <- getTitleAndSummary $ https"www.qwantz.com"/:"rssfeed.php"
+  usingHtml summary
+  "title" `isEqualTo` title

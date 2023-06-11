@@ -1,9 +1,9 @@
 module Sources.Word (word) where
 
-import Network.Class
-import File.Class
+import Sources.Lib
 
-word :: [Network, File, NetworkError] :>> es => Eff es (Map Text Text)
-word = do
-  (title, summary) <- getTitleAndSummary $ https "www.merriam-webster.com"/:"wotd"/:"feed"/:"rss2"
-  pure $ fromList [("*title", title), ("*summary", decodeUtf8 summary)]
+word :: _ => Source es
+word = makeSource "Word" do
+  (title, summary) <- getTitleAndSummary $ https"www.merriam-webster.com"/:"wotd"/:"feed"/:"rss2"
+  "title" `isEqualTo` title
+  "summary" `isEqualTo` decodeUtf8 summary

@@ -16,9 +16,12 @@ instance Show (ThrowingError error) where
 
 instance Typeable error => Exception (ThrowingError error) where
 
-runThrowing :: (Typeable error) => Eff (Throw error : effs) a -> Eff effs (Either error a)
+runThrowing :: (Typeable error) => Eff (Throw error : es) a -> Eff es (Either error a)
 runThrowing pureAction = thisIsPureTrustMe $ catch impureAction makeLeft
     where
         impureAction = reinterpret onThrow $ Right <$> pureAction
         onThrow (Throw error) = throwIO $ ThrowingError error
         makeLeft = pure . Left . unwrapError
+
+rethrow :: Throw newError :> es => (error -> newError) -> Eff (Throw error : es) a -> Eff es a
+rethrow f = interpret \(Throw e) -> throw $ f e

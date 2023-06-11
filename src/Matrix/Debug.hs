@@ -6,9 +6,9 @@ import Matrix.Class (Matrix(..))
 import Logging.Info
 
 -- Used for testing without writing to Matrix
-runDebugMatrix :: InfoLog :> es => Eff (Matrix : es) ~> Eff es
+runDebugMatrix :: InfoLog :> es => Interprets Matrix es
 runDebugMatrix = interpret \case
   UploadImage url -> pure url
-  GetHash _ key -> pure ":)"
+  GetHash _ key -> pure 1
   PutHash _ key _ -> pure ()
-  PutMsg _ _ body -> logInfo [f|Sending message:\n {body}\n=========\n\n|]
+  PutMsg _ body -> logInfo [f|Sending message:\n {body}\n=========\n\n|]

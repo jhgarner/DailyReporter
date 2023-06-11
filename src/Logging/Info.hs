@@ -9,6 +9,6 @@ type InfoLog = Output InfoText
 logInfo :: InfoLog :> es => Text -> Eff es ()
 logInfo = output . InfoText
 
-printInfoStream :: IOE :> es => Eff (InfoLog : es) ~> Eff es
+printInfoStream :: IOE :> es => Interprets InfoLog es
 printInfoStream = interpret \case
     Output (InfoText message) -> liftIO $ Data.Text.IO.putStrLn message

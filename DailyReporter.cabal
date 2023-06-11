@@ -4,7 +4,7 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 18258f32d99ada32acc4f3542814058e32181376461571f247fb2fe7b3c23e85
+-- hash: 80fb40b6550a124c3796207c63e35a8d79fdf1713fd5698970bb53d273030e4f
 
 name:           DailyReporter
 version:        0.1.0.0
@@ -21,6 +21,23 @@ extra-source-files:
     README.md
     ChangeLog.md
     LICENSE
+    data/parsers/Apod.json
+    data/parsers/Buttersafe.json
+    data/parsers/Ec.json
+    data/parsers/PDL.json
+    data/parsers/Qwantz.json
+    data/parsers/Smbc.json
+    data/parsers/Weather.json
+    data/parsers/Xkcd.json
+    data/templates/Apod.html
+    data/templates/Buttersafe.html
+    data/templates/Ec.html
+    data/templates/PDL.html
+    data/templates/Qwantz.html
+    data/templates/Smbc.html
+    data/templates/Weather.html
+    data/templates/Word.html
+    data/templates/Xkcd.html
 
 source-repository head
   type: git
@@ -46,12 +63,15 @@ library
       Sources.Apod
       Sources.Buttersafe
       Sources.Ec
+      Sources.Lib
       Sources.PDL
       Sources.Qwantz
       Sources.Smbc
+      Sources.Sources
       Sources.Weather
       Sources.Word
       Sources.Xkcd
+      Tracing
   other-modules:
       Paths_DailyReporter
   autogen-modules:
@@ -66,7 +86,8 @@ library
       TupleSections
       OverloadedStrings
       DataKinds
-  ghc-options: -fplugin=Cleff.Plugin
+      PartialTypeSignatures
+  ghc-options: -Wno-partial-type-signatures
   build-depends:
       CustomPrelude
     , PyF
@@ -74,31 +95,26 @@ library
     , base >=4.7 && <5
     , bytestring
     , cleff
-    , cleff-plugin
     , conduit-extra
     , containers
     , deriving-aeson
-    , exceptions
     , fast-tagsoup
-    , feed
+    , feed >=1.3.2.1
+    , file-embed
     , hashable
+    , http-api-data
     , http-conduit
     , indexed-traversable
     , lens
     , lens-aeson
     , modern-uri
-    , mtl
     , recursion-schemes
-    , regex-posix
     , req
-    , resourcet
-    , retry
     , scalpel
     , tagsoup
     , text
     , time
     , unliftio
-    , unordered-containers
     , vector
   mixins:
       base hiding (Prelude)
@@ -121,37 +137,33 @@ library CustomPrelude
       TupleSections
       OverloadedStrings
       DataKinds
+      PartialTypeSignatures
   build-depends:
       PyF
     , aeson
     , base >=4.7 && <5
     , bytestring
     , cleff
-    , cleff-plugin
     , conduit-extra
     , containers
     , deriving-aeson
-    , exceptions
     , fast-tagsoup
-    , feed
+    , feed >=1.3.2.1
+    , file-embed
     , hashable
+    , http-api-data
     , http-conduit
     , indexed-traversable
     , lens
     , lens-aeson
     , modern-uri
-    , mtl
     , recursion-schemes
-    , regex-posix
     , req
-    , resourcet
-    , retry
     , scalpel
     , tagsoup
     , text
     , time
     , unliftio
-    , unordered-containers
     , vector
   mixins:
       base (Prelude as BasePrelude)
@@ -174,7 +186,8 @@ executable DailyReporter-exe
       TupleSections
       OverloadedStrings
       DataKinds
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -W
+      PartialTypeSignatures
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -W -Wno-partial-type-signatures
   build-depends:
       DailyReporter
     , PyF
@@ -182,31 +195,26 @@ executable DailyReporter-exe
     , base >=4.7 && <5
     , bytestring
     , cleff
-    , cleff-plugin
     , conduit-extra
     , containers
     , deriving-aeson
-    , exceptions
     , fast-tagsoup
-    , feed
+    , feed >=1.3.2.1
+    , file-embed
     , hashable
+    , http-api-data
     , http-conduit
     , indexed-traversable
     , lens
     , lens-aeson
     , modern-uri
-    , mtl
     , recursion-schemes
-    , regex-posix
     , req
-    , resourcet
-    , retry
     , scalpel
     , tagsoup
     , text
     , time
     , unliftio
-    , unordered-containers
     , vector
   default-language: GHC2021
 
@@ -230,6 +238,7 @@ test-suite DailyReporter-test
       TupleSections
       OverloadedStrings
       DataKinds
+      PartialTypeSignatures
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-tool-depends:
       hspec-discover:hspec-discover
@@ -240,31 +249,26 @@ test-suite DailyReporter-test
     , base >=4.7 && <5
     , bytestring
     , cleff
-    , cleff-plugin
     , conduit-extra
     , containers
     , deriving-aeson
-    , exceptions
     , fast-tagsoup
-    , feed
+    , feed >=1.3.2.1
+    , file-embed
     , hashable
     , hspec
+    , http-api-data
     , http-conduit
     , indexed-traversable
     , lens
     , lens-aeson
     , modern-uri
-    , mtl
     , recursion-schemes
-    , regex-posix
     , req
-    , resourcet
-    , retry
     , scalpel
     , tagsoup
     , text
     , time
     , unliftio
-    , unordered-containers
     , vector
   default-language: GHC2021

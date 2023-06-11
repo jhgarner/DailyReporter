@@ -3,6 +3,7 @@
 module SourcesSpec where
 
 import Cleff
+import Cleff.Input
 import Control.Exception
 import Data.Map.Strict (fromList, Map)
 import Fallible.Throwing
@@ -25,37 +26,39 @@ import Sources.Buttersafe
 import Sources.PDL
 import Sources.Qwantz
 import Sources.Word
-import Config (Config(weatherApikey, long, lat, Config))
+import Config (Config(apodApikey, weatherApikey, long, lat, Config))
+import Sources.Sources (allSources)
+import Sources.Lib
+import Data.ByteString (readFile)
+import Fallible.Retryable (Retryable(RunWithRetries))
+import Fallible.Throwing (runThrowing)
+import Cleff (toEff)
 
 spec :: Spec
-spec = traverse_ specSource
-    [ ("weather", weather Config{weatherApikey="key", long="10", lat="34"}),
-      ("apod", apod "key"),
-      ("xkcd", xkcd),
-      ("ec", ec),
-      ("smbc", smbc),
-      ("butter", butter),
-      ("pdl", pdl),
-      ("qwantz", qwantz),
-      ("word", word)
-    ]
+spec = traverse_ specSource allSources
 
-specSource :: (Text, Eff [Network, NetworkError, File, IOE] (Map Text Text)) -> Spec
+specSource :: (Text, Eff [Input Config, Network, Retryable HttpException, File, IOE] SourceResult) -> Spec
 specSource (name, action) = describe (unpack name) $
     it "parses correctly" $ checkSource action name
 
-checkSource :: Eff [Network, NetworkError, File, IOE] (Map Text Text) -> Text -> Expectation
+checkSource :: Eff [Input Config, Network, Retryable HttpException, File, IOE] SourceResult -> Text -> Expectation
 checkSource action name = do
     let expectedFileName = "test/Sources/" <> name <> ".json"
-    (expectedJson, actual) <- runIOE $ runWithFilesystem $ liftA2 (,) (getFile expectedFileName) $ fakeNetwork action
+    expectedJson <- Data.ByteString.readFile $ unpack expectedFileName
+    actual <- runIOE $ runWithFilesystem $ fakeNetwork $ testConfig action
     let Just expected = decodeStrict' expectedJson
-    actual `shouldBe` expected
+    actual `shouldBe` Right expected
 
-fakeNetwork :: File :> es => Eff (Network : NetworkError : es) ~> Eff es
-fakeNetwork = handleError . handleNetwork
+fakeNetwork :: IOE :> es => Eff (Network : Retryable HttpException : es) ~> Eff es
+fakeNetwork = handleRetries . handleNetwork
   where
-    handleNetwork :: File :> es => Eff (Network : es) ~> Eff es
+    handleNetwork :: IOE :> es => Eff (Network : es) ~> Eff es
     handleNetwork = interpret \case
-      Get url _ -> getFile $ "test/Sources/" <> renderUrl url <> ".html"
-    handleError = interpret \case
-      Throw e -> error "Something went very wrong!"
+      Get url _ -> liftIO $ Data.ByteString.readFile $ unpack $ "test/Sources/" <> renderUrl url <> ".html"
+    handleRetries = interpret \case
+      RunWithRetries action _ -> flip fmap (toEff $ runThrowing action) \case
+        Left e -> error $ show e
+        Right result -> result
+
+testConfig :: Eff (Input Config:es) ~> Eff es
+testConfig = interpret \Input -> pure Config{weatherApikey="key", long="10", lat="34", apodApikey="key"}

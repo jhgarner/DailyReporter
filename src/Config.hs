@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
 
 module Config where
 
@@ -8,9 +9,10 @@ import Data.Text (Text)
 import GHC.Exts (fromString)
 import GHC.Generics (Generic)
 import System.Environment (getEnv)
+import Web.Internal.HttpApiData
 
 newtype RoomId = RoomId Text
-  deriving (Generic, Show, FromJSON)
+  deriving newtype (Show, FromJSON, ToHttpApiData)
 
 data Config = Config
   { apodApikey :: Text,

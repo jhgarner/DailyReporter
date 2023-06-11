@@ -1,9 +1,9 @@
-{ mkDerivation, aeson, base, bytestring, cleff, cleff-plugin
-, conduit-extra, containers, deriving-aeson, exceptions
-, fast-tagsoup, feed, hashable, hspec, hspec-discover, http-conduit
-, indexed-traversable, lens, lens-aeson, lib, modern-uri, mtl, PyF
-, recursion-schemes, regex-posix, req, resourcet, retry, scalpel
-, tagsoup, text, time, unliftio, unordered-containers, vector
+{ mkDerivation, aeson, base, bytestring, cleff, conduit-extra
+, containers, deriving-aeson, fast-tagsoup, feed, file-embed
+, hashable, hspec, hspec-discover, http-api-data, http-conduit
+, indexed-traversable, lens, lens-aeson, lib, modern-uri, PyF
+, recursion-schemes, req, scalpel, tagsoup, text, time, unliftio
+, vector
 }:
 mkDerivation {
   pname = "DailyReporter";
@@ -12,25 +12,22 @@ mkDerivation {
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    aeson base bytestring cleff cleff-plugin conduit-extra containers
-    deriving-aeson exceptions fast-tagsoup feed hashable http-conduit
-    indexed-traversable lens lens-aeson modern-uri mtl PyF
-    recursion-schemes regex-posix req resourcet retry scalpel tagsoup
-    text time unliftio unordered-containers vector
+    aeson base bytestring cleff conduit-extra containers deriving-aeson
+    fast-tagsoup feed file-embed hashable http-api-data http-conduit
+    indexed-traversable lens lens-aeson modern-uri PyF
+    recursion-schemes req scalpel tagsoup text time unliftio vector
   ];
   executableHaskellDepends = [
-    aeson base bytestring cleff cleff-plugin conduit-extra containers
-    deriving-aeson exceptions fast-tagsoup feed hashable http-conduit
-    indexed-traversable lens lens-aeson modern-uri mtl PyF
-    recursion-schemes regex-posix req resourcet retry scalpel tagsoup
-    text time unliftio unordered-containers vector
+    aeson base bytestring cleff conduit-extra containers deriving-aeson
+    fast-tagsoup feed file-embed hashable http-api-data http-conduit
+    indexed-traversable lens lens-aeson modern-uri PyF
+    recursion-schemes req scalpel tagsoup text time unliftio vector
   ];
   testHaskellDepends = [
-    aeson base bytestring cleff cleff-plugin conduit-extra containers
-    deriving-aeson exceptions fast-tagsoup feed hashable hspec
-    http-conduit indexed-traversable lens lens-aeson modern-uri mtl PyF
-    recursion-schemes regex-posix req resourcet retry scalpel tagsoup
-    text time unliftio unordered-containers vector
+    aeson base bytestring cleff conduit-extra containers deriving-aeson
+    fast-tagsoup feed file-embed hashable hspec http-api-data
+    http-conduit indexed-traversable lens lens-aeson modern-uri PyF
+    recursion-schemes req scalpel tagsoup text time unliftio vector
   ];
   testToolDepends = [ hspec-discover ];
   doHaddock = false;

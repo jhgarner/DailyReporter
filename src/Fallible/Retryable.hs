@@ -6,35 +6,46 @@ module Fallible.Retryable where
 import Control.Concurrent (threadDelay)
 import Fallible.Throwing
 import Logging.Errors
+import Tracing (Tracable)
 
 data Retryable e :: Effect where
-  RunWithRetries :: Eff (Throw e : effs) a -> Eff effs a -> Retryable e (Eff effs) a
+  RunWithRetries :: Eff (Throw e : effs) a -> (e -> Eff effs a) -> Retryable e (Eff effs) a
 makeEffect ''Retryable
 
-runRetryableTimer :: ('[IOE, ErrorLog] :>> es, Show e, Typeable e) => (e -> Bool) -> Eff (Retryable e : es) ~> Eff es
+runRetryableTimer :: (Show e, Typeable e, _) => (e -> Bool) -> Interprets (Retryable e) es
 runRetryableTimer isWorthRetrying = interpret \case
-  RunWithRetries action other -> cata @Natural runRetries 5
+  RunWithRetries action fallback -> cata @Natural runRetries 5
     where
-      runRetries Nothing = toEff other -- No more attempts remaining
-      runRetries (Just nextAttempt) = toEff (runThrowing action) >>= \case
+      runRetries nextAttempt = toEff (runThrowing action) >>= \case
         Left error
           | isWorthRetrying error -> do
-            output $ ErrorText [f|Failed with error: {show error}|]
-            liftIO $ threadDelay 1000000
-            nextAttempt
+            logError [f|Failed with error: {show error}|]
+            case nextAttempt of
+              Just nextAttempt -> do
+                liftIO $ threadDelay 1000000
+                nextAttempt
+              Nothing -> toEff $ fallback error
           | otherwise -> do
-            output $ ErrorText [f|Failed with error and not retrying: {show error}|]
-            toEff other
+            logError [f|Failed with error and not retrying: {show error}|]
+            toEff $ fallback error
         Right result -> pure result
 
-allowFailureOf :: (Retryable e :> es, Monoid a) => Eff (Throw e : es) a -> Eff es a
+handleFailureWith :: _ => (HttpException -> Eff es a) -> Eff (Throw HttpException : es) a -> Eff es a
+handleFailureWith = flip runWithRetries
+
+allowFailureOf :: (Monoid a, _) => Eff (Throw HttpException : es) a -> Eff es a
 allowFailureOf = runWithRetriesFallback mempty
 
-runWithRetriesFallback :: (Retryable e :> es) => a -> Eff (Throw e : es) a -> Eff es a
-runWithRetriesFallback fallback action = runWithRetries action (pure fallback)
+runWithRetriesFallback :: _ => a -> Eff (Throw HttpException : es) a -> Eff es a
+runWithRetriesFallback fallback action = runWithRetries action (const $ pure fallback)
 
-orFallbackTo :: Retryable e :> es => Eff (Throw e : es) a -> a -> Eff es a
-orFallbackTo action fallback = runWithRetries action (pure fallback)
+orFallbackTo :: _ => Eff (Throw HttpException : es) a -> a -> Eff es a
+orFallbackTo action fallback = runWithRetries action (const $ pure fallback)
 
-detectFailuresOf :: Retryable e :> es => Eff (Throw e : es) a -> Eff es (Maybe a)
-detectFailuresOf action = runWithRetries (fmap Just action) (pure Nothing)
+detectFailuresOf :: _ => Eff (Throw HttpException : es) a -> Eff es (Maybe a)
+detectFailuresOf action = runWithRetries (fmap Just action) (const $ pure Nothing)
+
+onSuccessOf :: _ => Eff es b -> Eff (Throw HttpException : es) a -> Eff es ()
+onSuccessOf onSuccess fallible = detectFailuresOf fallible >>= \case
+  Just _ -> void onSuccess
+  _ -> pure ()

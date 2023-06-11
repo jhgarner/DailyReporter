@@ -1,8 +1,14 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module File.Filesystem where
 
-import Data.ByteString (readFile)
+import Data.FileEmbed
 import File.Class
+import Data.Map (mapKeys, (!), keys)
 
-runWithFilesystem :: IOE :> es => Eff (File : es) ~> Eff es
+runWithFilesystem :: Interprets File es
 runWithFilesystem = interpret \case
-    GetFile name -> liftIO $ Data.ByteString.readFile $ unpack name
+    GetFile name -> pure $ filesystem ! unpack name
+
+filesystem :: Map FilePath ByteString
+filesystem = fromList $(makeRelativeToProject "data" >>= embedDir)

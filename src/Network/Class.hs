@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Network.Class where
 
@@ -7,6 +8,7 @@ import Text.Feed.Types (Item)
 import Text.Feed.Query (feedItems, getItemTitle, getItemSummary)
 import Text.Feed.Import (parseFeedString)
 import Network.HTTP.Req (HttpException(JsonHttpException))
+import Tracing (Tracable, traceEffect)
 
 type NetworkError = Throw HttpException
 
@@ -15,6 +17,11 @@ data Network :: Effect where
     Post :: (FromJSON result, HttpBody body, NetworkError :> effs) => Url Https -> body -> Option Https -> Network (Eff effs) result
     Put :: (FromJSON result, ToJSON body, NetworkError :> effs) => Url Https -> body -> Option Https -> Network (Eff effs) result
 makeEffect ''Network
+
+instance Tracable Network where
+  traceEffect (Get url _) = [f|Get {show url}|]
+  traceEffect (Post url _ _) = [f|Post {show url}|]
+  traceEffect (Put url _ _) = [f|Post {show url}|]
 
 isRecoverable :: HttpException -> Bool
 isRecoverable (JsonHttpException _) = False

@@ -3,17 +3,21 @@ module Prelude
   )
 where
 
+import Text.Read
 import BasePrelude as Prelude
 import Cleff as Prelude
 import Cleff.Input as Prelude
 import Cleff.Output as Prelude
 import Cleff.Trace as Prelude
+import Cleff.Fresh as Prelude
+import Cleff.State as Prelude (modify, runState, State)
 import Control.Applicative as Prelude
 import Control.Monad as Prelude
 import Data.ByteString as Prelude (ByteString)
 import Data.Data as Prelude (Typeable)
 import Data.Foldable as Prelude
 import Data.Foldable.WithIndex as Prelude
+import Data.Functor as Prelude
 import Data.Functor.Foldable as Prelude (Recursive (cata))
 import Data.Functor.Foldable.TH as Prelude (MakeBaseFunctor (makeBaseFunctor))
 import Data.Hashable as Prelude (Hashable (hash))
@@ -37,9 +41,11 @@ import Network.HTTP.Req as Prelude
     Url,
     header,
     https,
+    queryParamToList,
     oAuth2Bearer,
     useHttpsURI,
     (/:),
+    (/~),
     (=:),
   )
 import Numeric.Natural as Prelude
@@ -53,5 +59,25 @@ ifM mBool mTrue mFalse = mBool >>= \condition -> if condition then mTrue else mF
 interpretFromHandler :: forall e esSend es otherE. (e :> es, Handling esSend otherE es) => Eff (e : esSend) ~> Eff es
 interpretFromHandler action = withFromEff \toHandler -> interpret (toHandler . sendVia (toEff . toEff)) action
 
-sendHandler :: forall esSend e es otherE. (e :> es, Handling esSend otherE es) => e (Eff esSend) ~> Eff es
+sendHandler :: forall esSend es e otherE. (e :> es, Handling esSend otherE es) => e (Eff esSend) ~> Eff es
 sendHandler = sendVia \action -> withFromEff @esSend \toHandler -> toHandler $ toEff action
+
+tshow :: Show a => a -> Text
+tshow = pack . show
+
+type Interprets e es = Eff (e : es) ~> Eff es
+
+runOutputMonoid :: Monoid o => Eff (Output o:es) a -> Eff es (a, o)
+runOutputMonoid = runState mempty . reinterpret \(Output o) -> modify (<> o)
+
+readMaybe :: Read a => Text -> Maybe a
+readMaybe = Text.Read.readMaybe . unpack
+
+whenM :: Monad m => m Bool -> m () -> m ()
+whenM condition action = ifM condition action $ pure ()
+
+execState :: s -> Eff (State s:es) a -> Eff es s
+execState s = fmap snd . runState s
+
+evaluate :: (Traversable t, Applicative f) => t (f a) -> f (t a)
+evaluate = sequenceA

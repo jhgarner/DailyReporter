@@ -1,84 +1,87 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module Matrix.MatrixT (runRealMatrix, loginMatrix) where
+module Matrix.MatrixT (runRealMatrix, loginMatrix, usingActiveRoom) where
 
-import Config (RoomId (RoomId))
+import Config (RoomId (RoomId), Config (deviceId))
+import qualified Config
 import Data.Aeson (decodeStrict')
 import Fallible.Retryable (Retryable, orFallbackTo)
-import Matrix.Class (Matrix (..))
+import Matrix.Class
 import Network.Class
 import Text.URI (URI (uriScheme), mkURI)
 import Text.URI.QQ (scheme)
 import Deriving.Aeson (UnwrapUnaryRecords)
 
 -- Used to actually communicate with Matrix
-runRealMatrix :: forall es. [Input LoginResponse, Network] :>> es => Eff (Matrix : es) ~> Eff es
+runRealMatrix :: forall es. [Input LoginResponse, Fresh Int, Network] :>> es => Interprets Matrix es
 runRealMatrix = interpret handler
   where
     handler :: forall esSend. (Handling esSend Matrix es) => Matrix (Eff esSend) ~> Eff es
-    handler (UploadImage from) = do
-      let Just uri = mkURI from
-      let withScheme = uri {uriScheme = Just [scheme|https|]}
-      let (url, _) = fromJust $ useHttpsURI withScheme
-      image <- sendHandler @esSend $ Get url mempty
-      let imageType = last $ splitOn "." from
-      let contentType = header "Content-Type" [f|image/{imageType}|]
+    handler action = do
       auth <- getAuth
-      response <- sendHandler @esSend $ Post (baseUrl /: "media" /: "v3" /: "upload") (ReqBodyBs image) (auth <> contentType)
-      pure $ contentUri response
-    handler (GetHash roomId key) = do
-      auth <- getAuth
-      response <- sendHandler @esSend $ Get (room roomId /: "state" /: hashEventType /: key) auth
-      pure $ maybe "0" extractHash $ decodeStrict' response
-    handler (PutHash roomId key toHash) = do
-      auth <- getAuth
-      sendHandler @esSend $ Put (room roomId /: "state" /: hashEventType /: key) (Hashes $ show $ hash toHash) auth
-    handler (PutMsg roomId txnId "") = pure () -- Don't send empty messages
-    handler (PutMsg roomId txnId contents) = do
-      auth <- getAuth
-      sendHandler @esSend $ Put (room roomId /: "send" /: "m.room.message" /: txnId) msg auth
-      where
-        msg =
-          Msg
-            { body = contents,
-              format = "org.matrix.custom.html",
-              formattedBody = contents,
-              msgtype = "m.text"
-            }
+      txnId <- tshow <$> fresh @Int
+      interpretFromHandler @Network @esSend case action of
+        PutHash roomId key toHash -> do
+          put (roomUrl/~roomId/:"state"/:hashEventType/:key) (Hashes $ hash toHash) auth
 
-getAuth :: Input LoginResponse :> es => Eff es (Option Https)
-getAuth = inputs $ oAuth2Bearer . encodeUtf8 . token . accessToken
+        GetHash roomId key -> do
+          response <- get (roomUrl/~roomId/:"state"/:hashEventType/:key) auth
+          pure $ maybe 0 extractHash $ decodeStrict' response
 
-loginMatrix ::
-  (HasField "deviceId" config Text, HasField "password" config Text, [Retryable HttpException, Network, Input config] :>> es) =>
-  Eff (Input LoginResponse : es) ~> Eff es
+        PutMsg roomId contents -> do
+          put (roomUrl/~roomId/:"send"/:"m.room.message"/:txnId) msg auth
+          where
+            msg = Msg { body = contents
+                      , format = "org.matrix.custom.html"
+                      , formattedBody = contents
+                      , msgtype = "m.text"
+                      }
+
+        UploadImage from ->
+          maybe (pure from) uploadImage $ mkURI from
+          where
+            uploadImage uri = do
+              let withScheme = uri {uriScheme = Just [scheme|https|]}
+              -- Guaranteed to be valid because we set the scheme to https above
+              let (url, _) = fromJust $ useHttpsURI withScheme
+              image <- get url mempty
+              let imageType = last $ splitOn "." from
+              let contentType = header "Content-Type" [f|image/{imageType}|]
+              response <- post (baseUrl/:"media"/:"v3"/:"upload") (ReqBodyBs image) (auth <> contentType)
+              pure $ contentUri response
+
+    getAuth :: _ => Eff es (Option Https)
+    getAuth = inputs $ oAuth2Bearer . encodeUtf8 . token . accessToken
+
+    roomUrl :: Url Https
+    roomUrl = baseUrl/:"client"/:"v3"/:"rooms"
+
+    hashEventType :: Text
+    hashEventType = "com.gmail.jkrmnj.hashes"
+
+loginMatrix :: _ => Eff (Input LoginResponse:es) a -> Eff es a
 loginMatrix actions = do
-  deviceId <- inputs $ getField @"deviceId"
-  password <- inputs $ getField @"password"
+  deviceId <- inputs deviceId
+  password <- inputs Config.password
   let body =
         LoginRequest
           { identifier =
               Identifier
-                { idType = "m.id.user",
-                  user = "dailyreporterbot"
-                },
-            initialDeviceDisplayName = "bot",
-            password = password,
-            loginRequestDeviceId = deviceId,
-            loginRequestType = "m.login.password"
+                { idType = "m.id.user"
+                , user = "dailyreporterbot"
+                }
+          , initialDeviceDisplayName = "bot"
+          , password = password
+          , loginRequestDeviceId = deviceId
+          , loginRequestType = "m.login.password"
           }
-  loginResponse <- post (baseUrl /: "client" /: "v3" /: "login") (ReqBodyJson body) mempty `orFallbackTo` error "Bad"
+  loginResponse <- post (baseUrl/:"client"/:"v3"/:"login") (ReqBodyJson body) mempty `orFallbackTo` error "Bad"
   runInputConst loginResponse actions
 
-room :: RoomId -> Url Https
-room (RoomId roomId) = baseUrl /: "client" /: "v3" /: "rooms" /: roomId
-
 baseUrl :: Url 'Https
-baseUrl = https "matrix.org" /: "_matrix"
+baseUrl = https "matrix.org"/:"_matrix"
 
-hashEventType :: Text
-hashEventType = "com.gmail.jkrmnj.hashes"
 
 data LoginRequest = LoginRequest
   { identifier :: Identifier,
@@ -111,7 +114,7 @@ data Msg = Msg
   deriving (Generic, Show)
   deriving (ToJSON) via Snake Msg
 
-newtype Hashes = Hashes {extractHash :: String}
+newtype Hashes = Hashes {extractHash :: Int}
   deriving (Generic, Show)
   deriving (ToJSON, FromJSON) via Snake Hashes
 
@@ -122,3 +125,11 @@ newtype Content = Content {contentUri :: Text}
 newtype SessionToken = SessionToken {token :: Text}
   deriving (Generic, Show)
   deriving (FromJSON) via CustomJSON '[UnwrapUnaryRecords] SessionToken
+
+usingActiveRoom :: forall es. Matrix :> es => RoomId -> Interprets MatrixInRoom es
+usingActiveRoom roomId = interpret handler
+  where
+    handler :: forall esSend. (Handling esSend MatrixInRoom es) => MatrixInRoom (Eff esSend) ~> Eff es
+    handler (GetHashFromRoom key) = sendHandler @esSend $ GetHash roomId key
+    handler (PutHashInRoom key hash) = sendHandler @esSend $ PutHash roomId key hash
+    handler (PutMsgInRoom msg) = sendHandler @esSend $ PutMsg roomId msg

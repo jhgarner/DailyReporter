@@ -1,13 +1,10 @@
 module Sources.PDL (pdl) where
 
-import Parser.HtmlParser (extractHtml)
-import Network.Class
-import File.Class
+import Sources.Lib
 
-pdl :: [Network, File, NetworkError] :>> es => Eff es (Map Text Text)
-pdl = do
+pdl :: _ => Source es
+pdl = makeSource "PDL" do
   -- Unfortunately the title is only in the RSS feed...
-  title <- getTitle $ https "feeds.feedburner.com"/:"PoorlyDrawnLines"
-  guide <- getFile "parsers/pdl.json"
-  html <- get (https "poorlydrawnlines.com") mempty
-  pure $ insert "*title" title $ extractHtml guide html
+  title <- getTitle $ https"feeds.feedburner.com"/:"PoorlyDrawnLines"
+  usingHtmlUrl $ https"poorlydrawnlines.com"
+  "title" `isEqualTo` title

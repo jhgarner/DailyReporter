@@ -1,11 +1,6 @@
 module Sources.Ec (ec) where
 
-import Parser.HtmlParser (extractHtml)
-import File.Class
-import Network.Class
+import Sources.Lib
 
-ec :: [Network, File, NetworkError] :>> es => Eff es (Map Text Text)
-ec = do
-  html <- get (https "existentialcomics.com") mempty
-  guide <- getFile "parsers/ec.json"
-  pure $ extractHtml guide html
+ec :: _ => Source es
+ec = makeSource "Ec" $ usingHtmlUrl $ https"existentialcomics.com"

@@ -1,4 +1,5 @@
 module Logging.Errors where
+
 import Data.Text.IO (hPutStrLn)
 import System.IO (stderr)
 
@@ -9,6 +10,6 @@ type ErrorLog = Output ErrorText
 logError :: ErrorLog :> es => Text -> Eff es ()
 logError = output . ErrorText
 
-printErrorStream :: IOE :> es => Eff (ErrorLog : es) ~> Eff es
+printErrorStream :: IOE :> es => Interprets ErrorLog es
 printErrorStream = interpret \case
-    Output (ErrorText message) -> liftIO $ hPutStrLn stderr message
+  Output (ErrorText message) -> liftIO $ hPutStrLn stderr message
