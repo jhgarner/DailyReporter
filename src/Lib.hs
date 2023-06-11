@@ -45,8 +45,8 @@ runEff =
     . runFreshAtomicCounter
     . runRetryableTimer isRecoverable
     . runWithFilesystem
-    . runOnInternet . runTrace @Network
+    . runOnInternet
     -- Uncomment this line to us a fake matrix effect
-    . runDebugMatrix
+    -- . runDebugMatrix
     -- Uncomment this line to login to matrix and run a real version
-    -- . loginMatrix . runRealMatrix
+    . loginMatrix . runRealMatrix
