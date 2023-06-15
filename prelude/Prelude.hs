@@ -20,7 +20,8 @@ import Data.Foldable.WithIndex as Prelude
 import Data.Functor as Prelude
 import Data.Functor.Foldable as Prelude (Recursive (cata))
 import Data.Functor.Foldable.TH as Prelude (MakeBaseFunctor (makeBaseFunctor))
-import Data.Hashable as Prelude (Hashable (hash))
+import Data.Hashable (Hashable (hash))
+import Data.Hashable as Prelude (Hashable)
 import Data.Kind as Prelude (Type)
 import Data.Map.Strict as Prelude (Map, fromList, insert, singleton, update)
 import Data.Maybe as Prelude
@@ -81,3 +82,6 @@ execState s = fmap snd . runState s
 
 evaluate :: (Traversable t, Applicative f) => t (f a) -> f (t a)
 evaluate = sequenceA
+
+hash :: Hashable a => a -> Text
+hash = pack . show . Data.Hashable.hash

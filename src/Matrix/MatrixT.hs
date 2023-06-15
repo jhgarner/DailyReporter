@@ -27,7 +27,7 @@ runRealMatrix = interpret handler
 
         GetHash roomId key -> do
           response <- get (roomUrl/~roomId/:"state"/:hashEventType/:key) auth
-          pure $ maybe 0 extractHash $ decodeStrict' response
+          pure $ maybe "0" extractHash $ decodeStrict' response
 
         PutMsg roomId contents -> do
           put (roomUrl/~roomId/:"send"/:"m.room.message"/:txnId) msg auth
@@ -114,7 +114,7 @@ data Msg = Msg
   deriving (Generic, Show)
   deriving (ToJSON) via Snake Msg
 
-newtype Hashes = Hashes {extractHash :: Int}
+newtype Hashes = Hashes {extractHash :: Text}
   deriving (Generic, Show)
   deriving (ToJSON, FromJSON) via Snake Hashes
 
