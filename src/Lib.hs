@@ -31,11 +31,6 @@ runReport = runEff do
   config@Config {..} <- input
   usingActiveRoom roomId sendAllSources
 
-runTrace :: forall e es. (Tracable e, _) => Eff es ~> Eff es
-runTrace = interpose @e \effect -> do
-  liftIO $ putStrLn $ unpack $ traceEffect effect
-  sendVia toEff effect
-
 runEff :: Eff _ a -> IO a
 runEff =
   runIOE

@@ -26,6 +26,7 @@ sendSource source = do
   logInfo [f|Running {nameOf source}|]
   source <- evaluate source
   whenM (isNewSource source) do
+    logInfo [f|Source was new|]
     message <- templateSource source
     writeNewParams source `onSuccessOf` putMsgInRoom message
 
@@ -51,10 +52,9 @@ templateSource (name, Right params) = do
 
 writeNewParams :: _ => EvaluatedSource -> Eff es ()
 writeNewParams (name, Left _) = pure ()
-writeNewParams (name, Right params) = allowFailureOf $ writeCache name params
-
-writeCache :: _ => Hashable a => Text -> a -> Eff es ()
-writeCache name value = putHashInRoom name $ hash value
+writeNewParams (name, Right params) = do
+  logInfo [f|Writing new param hash|]
+  allowFailureOf $ putHashInRoom name params
 
 replaceImgs :: _ => Map Text Text -> Eff es (Map Text Text)
 replaceImgs = itraverse replaceImg
