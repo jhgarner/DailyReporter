@@ -1,4 +1,3 @@
-
 module Sources.Buttersafe (butter) where
 
 import Sources.Lib

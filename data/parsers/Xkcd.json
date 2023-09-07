@@ -9,8 +9,8 @@
                 "name": "img",
                 "attr": {
                     "src": "*img",
-                    "alt": "*alt",
-                    "title": "*title"
+                    "alt": "*title",
+                    "title": "*alt"
                 }
             }
         ]

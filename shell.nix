@@ -3,8 +3,8 @@ let
 in
 pkgs.mkShell {
   buildInputs = [
-    pkgs.haskell.packages.ghc944.ghc
-    (pkgs.lib.pipe pkgs.haskell.packages.ghc944.haskell-language-server [pkgs.haskell.lib.compose.dontHaddock pkgs.haskell.lib.compose.dontCheck])
+    pkgs.ghc
+    pkgs.haskell-language-server
     # (pkgs.haskell.packages.ghc944.haskell-language-server.override { supportedGhcVersions = [ "944" ]; })
     pkgs.niv
     pkgs.cabal2nix

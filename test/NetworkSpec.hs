@@ -15,5 +15,5 @@ spec :: Spec
 spec = do
     describe "Network effect" do
         it "Doesn't leak exceptions" do
-            actual <- runIOE @(Either HttpException ByteString) $ runOnInternet $ runThrowing $ get (https"notARealUrl") mempty
+            actual <- runIOE $ runOnInternet $ runThrowing @HttpException $ get (https"notARealUrl") mempty
             actual `shouldSatisfy` isLeft

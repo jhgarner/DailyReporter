@@ -1,31 +1,25 @@
 # Daily Reporter
 
-Uses Nix and a Github action to send out the email. You can build the project
-using `nix-build` or `stack build`.
+A bot for sending out batched Matrix messages whenever a source you're watching
+changes. For example, it can collect comics from sources like Xkcd or Smbc and
+send them every morning when a new one is detected. Works best if you run it on
+some kind of schedule. I use Github actions to run it every morning.
 
-If you want a really fast `nix-build`, visit
-https://app.cachix.org/cache/jhgarner-projects.
+You can build the project using `nix-build` or `cabal build`. If you want a
+really fast `nix-build`, visit https://app.cachix.org/cache/jhgarner-projects.
 
 When running the app, you must have an environment variable called `CONFIG` with
 the following contents:
 
 ```yaml
 {
-    "fromName": "Someone",
-    "fromEmail": "someEmail@gmail.com",
-    "to": [
-      {
-        "name": "someone else (or maybe not)",
-        "email": "email@gmail.com"
-      }
-    ],
-    "subject": "Daily Reporter",
-    "accessKey": "AWS access key here with access to SES and an S3 bucket",
-    "secretKey": "Similar to above",
-    "apodApikey": "Get this from Nasa's website",
-    "weatherApikey": "TODO Darksky doesn't give these out anymore",
-    "long": "50.111",
-    "lat": "-50.111"
+    "apodApikey": "Key from api.nasa.gov",
+    "deviceId": "A device id for the bot",
+    "roomId": "Your Matrix room",
+    "password": "Your bot's Matrix password",
+    "weatherApikey": "Key from api.pirateweather.net",
+    "long": "10.0",
+    "lat": "-10.0"
 }
 ```
 

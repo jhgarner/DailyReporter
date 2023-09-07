@@ -4,7 +4,7 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 80fb40b6550a124c3796207c63e35a8d79fdf1713fd5698970bb53d273030e4f
+-- hash: 03473e109714631ad5eb80de13b65dbced11a6c4a2d4e94b9da5ddfafbb1dea5
 
 name:           DailyReporter
 version:        0.1.0.0
@@ -50,6 +50,7 @@ library
       Fallible.Throwing
       File.Class
       File.Filesystem
+      Fresh.DateCounter
       Lib
       Logging.Errors
       Logging.Info
@@ -87,6 +88,11 @@ library
       OverloadedStrings
       DataKinds
       PartialTypeSignatures
+      QualifiedDo
+      QuasiQuotes
+      ScopedTypeVariables
+      DerivingStrategies
+      DerivingVia
   ghc-options: -Wno-partial-type-signatures
   build-depends:
       CustomPrelude
@@ -138,6 +144,11 @@ library CustomPrelude
       OverloadedStrings
       DataKinds
       PartialTypeSignatures
+      QualifiedDo
+      QuasiQuotes
+      ScopedTypeVariables
+      DerivingStrategies
+      DerivingVia
   build-depends:
       PyF
     , aeson
@@ -187,6 +198,11 @@ executable DailyReporter-exe
       OverloadedStrings
       DataKinds
       PartialTypeSignatures
+      QualifiedDo
+      QuasiQuotes
+      ScopedTypeVariables
+      DerivingStrategies
+      DerivingVia
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -W -Wno-partial-type-signatures
   build-depends:
       DailyReporter
@@ -222,7 +238,9 @@ test-suite DailyReporter-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Mock
       NetworkSpec
+      SourcesSourcesSpec
       SourcesSpec
       ThrowingSpec
       Paths_DailyReporter
@@ -239,11 +257,17 @@ test-suite DailyReporter-test
       OverloadedStrings
       DataKinds
       PartialTypeSignatures
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+      QualifiedDo
+      QuasiQuotes
+      ScopedTypeVariables
+      DerivingStrategies
+      DerivingVia
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wno-partial-type-signatures
   build-tool-depends:
       hspec-discover:hspec-discover
   build-depends:
-      DailyReporter
+      CustomPrelude
+    , DailyReporter
     , PyF
     , aeson
     , base >=4.7 && <5
@@ -271,4 +295,6 @@ test-suite DailyReporter-test
     , time
     , unliftio
     , vector
+  mixins:
+      base hiding (Prelude)
   default-language: GHC2021

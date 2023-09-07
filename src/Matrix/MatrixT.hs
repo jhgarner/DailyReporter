@@ -13,8 +13,10 @@ import Text.URI (URI (uriScheme), mkURI)
 import Text.URI.QQ (scheme)
 import Deriving.Aeson (UnwrapUnaryRecords)
 
+type In = (:>)
+type AllIn effects stack = effects :>> stack
 -- Used to actually communicate with Matrix
-runRealMatrix :: forall es. [Input LoginResponse, Fresh Int, Network] :>> es => Interprets Matrix es
+runRealMatrix :: forall es. [Input LoginResponse, Fresh Int, Network] `AllIn` es => Interprets Matrix es
 runRealMatrix = interpret handler
   where
     handler :: forall esSend. (Handling esSend Matrix es) => Matrix (Eff esSend) ~> Eff es

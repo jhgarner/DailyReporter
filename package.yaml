@@ -60,6 +60,11 @@ default-extensions:
 - OverloadedStrings
 - DataKinds
 - PartialTypeSignatures
+- QualifiedDo
+- QuasiQuotes
+- ScopedTypeVariables
+- DerivingStrategies
+- DerivingVia
 
 internal-libraries:
   CustomPrelude:
@@ -108,9 +113,14 @@ tests:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -Wno-partial-type-signatures
     dependencies:
-    - base >= 4.7 && < 5
+    - name: base
+      version: ">= 4.7 && < 5"
+      mixin:
+      - hiding (Prelude)
     - DailyReporter
     - hspec
+    - name: CustomPrelude
     build-tools:
     - hspec-discover

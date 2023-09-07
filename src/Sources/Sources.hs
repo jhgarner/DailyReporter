@@ -34,13 +34,9 @@ isNewSource :: _ => EvaluatedSource -> Eff es Bool
 isNewSource (name, Left _) = pure True -- Always display the error
 isNewSource (name, Right params) = do
   logInfo [f|Checking if {name} is new|]
-  isNewSection name params `orFallbackTo` True
-
-isNewSection :: _ => Text -> Map Text Text -> Eff es Bool
-isNewSection name params = do
-  cached <- getHashFromRoom name
-  pure $ cached /= hash params
-
+  fallingBackTo True do
+    cached <- getHashFromRoom name
+    pure $ cached /= hash params
 
 templateSource :: _ => EvaluatedSource -> Eff es Text
 templateSource (name, Left errorMessage) = pure errorMessage

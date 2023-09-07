@@ -1,21 +1,22 @@
-{-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Lib
-  ( runReport,
-  )
+module Lib (
+  runReport,
+)
 where
 
 import Config (Config (..), RoomId, loadConfig)
-import Fallible.Retryable
-  ( Retryable,
-    allowFailureOf,
-    detectFailuresOf,
-    orFallbackTo,
-    runRetryableTimer,
-  )
+import Fallible.Retryable (
+  Retryable,
+  allowFailureOf,
+  detectFailuresOf,
+  orFallbackTo,
+  runRetryableTimer,
+ )
 import File.Filesystem
+import Fresh.DateCounter
 import Logging.Errors
 import Logging.Info
 import Matrix.Class
@@ -28,7 +29,7 @@ import Tracing
 
 runReport :: IO ()
 runReport = runEff do
-  config@Config {..} <- input
+  config@Config{..} <- input
   usingActiveRoom roomId sendAllSources
 
 runEff :: Eff _ a -> IO a
@@ -37,11 +38,12 @@ runEff =
     . loadConfig
     . printInfoStream
     . printErrorStream
-    . runFreshAtomicCounter
+    . runFreshWithDate
     . runRetryableTimer isRecoverable
     . runWithFilesystem
     . runOnInternet
     -- Uncomment this line to us a fake matrix effect
     -- . runDebugMatrix
     -- Uncomment this line to login to matrix and run a real version
-    . loginMatrix . runRealMatrix
+    . loginMatrix
+    . runRealMatrix
