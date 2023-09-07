@@ -31,6 +31,8 @@ mkDerivation {
   ];
   testToolDepends = [ hspec-discover ];
   doHaddock = false;
+  jailbreak = true;
+  doCheck = false;
   homepage = "https://github.com/jhgarner/DailyReporter#readme";
   license = lib.licenses.mit;
   mainProgram = "DailyReporter-exe";

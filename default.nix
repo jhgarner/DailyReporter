@@ -1,7 +1,8 @@
 let
   # Read in the Niv sources
   sources = import ./nix/sources.nix {};
-  app = pkgs.haskellPackages.callPackage ./app.nix {};
+  cleff = pkgs.haskell.lib.doJailbreak pkgs.haskellPackages.cleff;
+  app = pkgs.haskellPackages.callPackage ./app.nix {inherit cleff;};
 
   # Fetch the haskell.nix commit we have pinned with Niv
   # haskellNix = import sources.haskellNix {};
