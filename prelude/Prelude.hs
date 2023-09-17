@@ -1,16 +1,17 @@
-module Prelude
-  ( module Prelude,
-  )
+{-# LANGUAGE DeriveAnyClass #-}
+
+module Prelude (
+  module Prelude,
+)
 where
 
-import Text.Read
 import BasePrelude as Prelude
 import Cleff as Prelude
+import Cleff.Fresh as Prelude
 import Cleff.Input as Prelude
 import Cleff.Output as Prelude
+import Cleff.State as Prelude (State, modify, runState)
 import Cleff.Trace as Prelude
-import Cleff.Fresh as Prelude
-import Cleff.State as Prelude (modify, runState, State)
 import Control.Applicative as Prelude
 import Control.Monad as Prelude
 import Data.ByteString as Prelude (ByteString)
@@ -23,7 +24,6 @@ import Data.Functor.Foldable.TH as Prelude (MakeBaseFunctor (makeBaseFunctor))
 import Data.Hashable (Hashable (hash))
 import Data.Hashable as Prelude (Hashable)
 import Data.Kind as Prelude (Type)
-import Data.Map.Strict as Prelude (Map, fromList, insert, singleton, update)
 import Data.Maybe as Prelude
 import Data.Monoid as Prelude
 import Data.Semigroup as Prelude hiding (First, Last, getFirst, getLast)
@@ -32,25 +32,42 @@ import Data.Text.Encoding as Prelude (decodeUtf8, encodeUtf8)
 import Data.Traversable.WithIndex as Prelude
 import Deriving.Aeson.Stock as Prelude
 import GHC.Records as Prelude
-import Network.HTTP.Req as Prelude
-  ( HttpBody,
-    HttpException,
-    Option,
-    ReqBodyBs (ReqBodyBs),
-    ReqBodyJson (ReqBodyJson),
-    Scheme (Https),
-    Url,
-    header,
-    https,
-    queryParamToList,
-    oAuth2Bearer,
-    useHttpsURI,
-    (/:),
-    (/~),
-    (=:),
-  )
+import Generic.Data as Prelude (Generically (..))
+import Network.HTTP.Req as Prelude (
+  HttpBody,
+  HttpException,
+  Option,
+  ReqBodyBs (ReqBodyBs),
+  ReqBodyJson (ReqBodyJson),
+  Scheme (Https),
+  Url,
+  header,
+  https,
+  oAuth2Bearer,
+  queryParamToList,
+  renderUrl,
+  useHttpsURI,
+  (/:),
+  (/~),
+  (=:),
+ )
 import Numeric.Natural as Prelude
 import PyF (fmt)
+import Text.Read
+
+deriving instance Hashable Scheme
+deriving instance Hashable (Url Https)
+deriving via Generically Scheme instance FromJSON Scheme
+deriving via Generically (Url Https) instance FromJSON (Url Https)
+deriving via Generically Scheme instance ToJSON Scheme
+deriving via Generically (Url Https) instance ToJSON (Url Https)
+
+data MyUrl = HttpsUrl (Url Https) | MxcUrl Text
+  deriving (Generic, Eq, Show, Hashable, FromJSON, ToJSON)
+
+getUrl :: MyUrl -> Text
+getUrl (HttpsUrl url) = renderUrl url
+getUrl (MxcUrl url) = url
 
 f = fmt
 
@@ -68,7 +85,7 @@ tshow = pack . show
 
 type Interprets e es = Eff (e : es) ~> Eff es
 
-runOutputMonoid :: Monoid o => Eff (Output o:es) a -> Eff es (a, o)
+runOutputMonoid :: Monoid o => Eff (Output o : es) a -> Eff es (a, o)
 runOutputMonoid = runState mempty . reinterpret \(Output o) -> modify (<> o)
 
 readMaybe :: Read a => Text -> Maybe a
@@ -77,7 +94,7 @@ readMaybe = Text.Read.readMaybe . unpack
 whenM :: Monad m => m Bool -> m () -> m ()
 whenM condition action = ifM condition action $ pure ()
 
-execState :: s -> Eff (State s:es) a -> Eff es s
+execState :: s -> Eff (State s : es) a -> Eff es s
 execState s = fmap snd . runState s
 
 evaluate :: (Traversable t, Applicative f) => t (f a) -> f (t a)

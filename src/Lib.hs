@@ -15,8 +15,8 @@ import Fallible.Retryable (
   orFallbackTo,
   runRetryableTimer,
  )
-import File.Filesystem
 import Fresh.DateCounter
+import Logging.Context
 import Logging.Errors
 import Logging.Info
 import Matrix.Class
@@ -24,6 +24,8 @@ import Matrix.Debug
 import Matrix.MatrixT
 import Network.Class
 import Network.Network
+import Sources.Lib.SourceFactory
+import Sources.Lib.SourceResult
 import Sources.Sources
 import Tracing
 
@@ -36,11 +38,12 @@ runEff :: Eff _ a -> IO a
 runEff =
   runIOE
     . loadConfig
+    . runLogContext
     . printInfoStream
     . printErrorStream
     . runFreshWithDate
     . runRetryableTimer isRecoverable
-    . runWithFilesystem
+    . runRetryableTimer @SourceError (const False)
     . runOnInternet
     -- Uncomment this line to us a fake matrix effect
     -- . runDebugMatrix

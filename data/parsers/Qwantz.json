@@ -1,9 +1,0 @@
-[
-    {
-        "name": "img",
-        "attr": {
-            "title": "*alt",
-            "src": "*img"
-        }
-    }
-]

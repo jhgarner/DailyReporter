@@ -1,59 +1,86 @@
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Sources.Sources where
+
+import Data.Functor.Foldable (Corecursive (embed))
+import Data.Text (intercalate, intersperse)
+import Fallible.Retryable
+import Logging.Context (withContext)
+import Logging.Errors (logError)
+import Logging.Info
+import Matrix.Class
+import Message
 import Sources.Apod
 import Sources.Buttersafe
 import Sources.Ec
 import Sources.Lib
+import Sources.Lib.SourceResult
 import Sources.PDL
 import Sources.Qwantz
 import Sources.Smbc
 import Sources.Weather
 import Sources.Word
 import Sources.Xkcd
-import Fallible.Retryable
-import Matrix.Class
-import Logging.Info
 
 sendAllSources :: _ => Eff es ()
 sendAllSources = traverse_ sendSource allSources
 
 allSources :: _ => [Source es]
-allSources = [ weather, apod, xkcd, ec, smbc, butter, pdl, qwantz, word ]
+allSources = [weather, apod, xkcd, ec, smbc, butter, pdl, qwantz, word]
 
 sendSource :: _ => Source es -> Eff es ()
-sendSource source = do
-  logInfo [f|Running {nameOf source}|]
-  source <- evaluate source
-  whenM (isNewSource source) do
-    logInfo [f|Source was new|]
-    message <- templateSource source
-    writeNewParams source `onSuccessOf` putMsgInRoom message
+sendSource Source{..} = do
+  withContext name do
+    logInfo [f|Running Source|]
+    handleFailureWith sourceErrorHandler $ evalSource name sourceAction
+    logInfo [f|Source Ran|]
 
-isNewSource :: _ => EvaluatedSource -> Eff es Bool
-isNewSource (name, Left _) = pure True -- Always display the error
-isNewSource (name, Right params) = do
-  logInfo [f|Checking if {name} is new|]
+sourceErrorHandler :: _ => SourceError -> Eff es ()
+sourceErrorHandler error = do
+  logError [f|Source failed: {show error}|]
+  allowFailureOf $ putMsgInRoom $ pack $ show error
+
+evalSource :: _ => Text -> Eff es [Message] -> Eff es ()
+evalSource hashKey action = do
+  messages <- action
+  ifM
+    (isNewSource hashKey messages)
+    do
+      logInfo "Source was new"
+      messagesWithValidImages <- traverse replaceImgs messages
+      let message = intercalate "<br/>" $ fmap messageToText messagesWithValidImages
+      writeNewParams hashKey messages `onSuccessOf` putMsgInRoom message
+    do
+      logInfo "Source was not new"
+
+isNewSource :: _ => Text -> [Message] -> Eff es Bool
+isNewSource hashKey messages = do
+  logInfo [f|Checking if {hashKey} is new|]
   fallingBackTo True do
-    cached <- getHashFromRoom name
-    pure $ cached /= hash params
+    cached <- getHashFromRoom hashKey
+    pure $ cached /= hash messages
 
-templateSource :: _ => EvaluatedSource -> Eff es Text
-templateSource (name, Left errorMessage) = pure errorMessage
-templateSource (name, Right params) = do
-  logInfo [f|Applying template to {name}|]
-  html <- decodeUtf8 <$> getFile [f|templates/{name}.html|]
-  paramsWithValidImages <- replaceImgs params `orFallbackTo` params
-  pure (ifoldr' replace html paramsWithValidImages)
+sendNewSource :: _ => Text -> [Message] -> Eff es ()
+sendNewSource hashKey messages = do
+  logInfo "Source was new"
+  messagesWithValidImages <- traverse replaceImgs messages
+  let message = intercalate "<br/>" $ fmap messageToText messagesWithValidImages
+  writeNewParams hashKey messages `onSuccessOf` putMsgInRoom message
 
-writeNewParams :: _ => EvaluatedSource -> Eff es ()
-writeNewParams (name, Left _) = pure ()
-writeNewParams (name, Right params) = do
-  logInfo [f|Writing new param hash|]
-  allowFailureOf $ putHashInRoom name params
+replaceImgs :: _ => Message -> Eff es Message
+replaceImgs = cata \case
+  ImgF (HttpsUrl url) -> Img <$> (uploadImage url `orFallbackTo` HttpsUrl url)
+  message -> embed <$> sequence message
 
-replaceImgs :: _ => Map Text Text -> Eff es (Map Text Text)
-replaceImgs = itraverse replaceImg
-  where
-    replaceImg "*img" url = uploadImage url
-    replaceImg _ url = pure url
+messageToText :: Message -> Text
+messageToText = cata \case
+  ImgF url -> [f|<img src="{getUrl url}"></img>|]
+  HeaderF header -> [f|<h2>{header}</h2>|]
+  ParagraphF paragraph -> [f|<p>{paragraph}</p>|]
+  LinkF url content -> [f|<a href="{renderUrl url}">{content}</a>|]
+
+writeNewParams :: _ => Text -> [Message] -> Eff es ()
+writeNewParams hashKey messages = do
+  logInfo [f|Writing new messages hash|]
+  allowFailureOf $ putHashInRoom hashKey messages

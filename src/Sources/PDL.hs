@@ -5,6 +5,10 @@ import Sources.Lib
 pdl :: _ => Source es
 pdl = makeSource "PDL" do
   -- Unfortunately the title is only in the RSS feed...
-  title <- getTitle $ https"feeds.feedburner.com"/:"PoorlyDrawnLines"
-  usingHtmlUrl $ https"poorlydrawnlines.com"
-  "title" `isEqualTo` title
+  getTitle feed >>= makeTitle home
+  usingHtmlUrl home do
+    srcs <- getAttrs "src" `on` "img" `inside` ("div" `withClass` "post")
+    traverse makeImage srcs
+
+home = https "poorlydrawnlines.com"
+feed = https "feeds.feedburner.com" /: "PoorlyDrawnLines"

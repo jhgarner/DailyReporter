@@ -1,9 +1,8 @@
-{ mkDerivation, aeson, base, bytestring, cleff, conduit-extra
-, containers, deriving-aeson, fast-tagsoup, feed, file-embed
-, hashable, hspec, hspec-discover, http-api-data, http-conduit
-, indexed-traversable, lens, lens-aeson, lib, modern-uri, PyF
-, recursion-schemes, req, scalpel, tagsoup, text, time, unliftio
-, vector
+{ mkDerivation, aeson, base, bytestring, cleff, deriving-aeson
+, fast-tagsoup, feed, generic-data, hashable, hspec, hspec-discover
+, http-api-data, indexed-traversable, lib, modern-uri, PyF
+, recursion-schemes, req, scalpel-core, tagsoup, text, time
+, unliftio
 }:
 mkDerivation {
   pname = "DailyReporter";
@@ -12,27 +11,23 @@ mkDerivation {
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    aeson base bytestring cleff conduit-extra containers deriving-aeson
-    fast-tagsoup feed file-embed hashable http-api-data http-conduit
-    indexed-traversable lens lens-aeson modern-uri PyF
-    recursion-schemes req scalpel tagsoup text time unliftio vector
+    aeson base bytestring cleff deriving-aeson fast-tagsoup feed
+    generic-data hashable http-api-data indexed-traversable modern-uri
+    PyF recursion-schemes req scalpel-core tagsoup text time unliftio
   ];
   executableHaskellDepends = [
-    aeson base bytestring cleff conduit-extra containers deriving-aeson
-    fast-tagsoup feed file-embed hashable http-api-data http-conduit
-    indexed-traversable lens lens-aeson modern-uri PyF
-    recursion-schemes req scalpel tagsoup text time unliftio vector
+    aeson base bytestring cleff deriving-aeson fast-tagsoup feed
+    generic-data hashable http-api-data indexed-traversable modern-uri
+    PyF recursion-schemes req scalpel-core tagsoup text time unliftio
   ];
   testHaskellDepends = [
-    aeson base bytestring cleff conduit-extra containers deriving-aeson
-    fast-tagsoup feed file-embed hashable hspec http-api-data
-    http-conduit indexed-traversable lens lens-aeson modern-uri PyF
-    recursion-schemes req scalpel tagsoup text time unliftio vector
+    aeson base bytestring cleff deriving-aeson fast-tagsoup feed
+    generic-data hashable hspec http-api-data indexed-traversable
+    modern-uri PyF recursion-schemes req scalpel-core tagsoup text time
+    unliftio
   ];
   testToolDepends = [ hspec-discover ];
   doHaddock = false;
-  jailbreak = true;
-  doCheck = false;
   homepage = "https://github.com/jhgarner/DailyReporter#readme";
   license = lib.licenses.mit;
   mainProgram = "DailyReporter-exe";

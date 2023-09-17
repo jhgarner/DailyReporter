@@ -4,6 +4,11 @@ import Sources.Lib
 
 smbc :: _ => Source es
 smbc = makeSource "Smbc" do
-  (title, summary) <- getTitleAndSummary $ https"smbc-comics.com"/:"rss.php"
-  usingHtml summary
-  "title" `isEqualTo` title
+  (title, summary) <- getTitleAndSummary feed
+  makeTitle home title
+  usingHtml summary do
+    getAttr "src" `on` "img" >>= makeImage
+    getHtml `on` "p" >>= makeText
+
+home = https "smbc-comics.com"
+feed = home /: "rss.php"

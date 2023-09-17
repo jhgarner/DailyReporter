@@ -23,18 +23,12 @@ description:         Please see the README on GitHub at <https://github.com/jhga
 
 dependencies:
 - aeson
-- lens-aeson
-- http-conduit
 - bytestring
 - text
 - time
-- lens
-- scalpel
+- scalpel-core
 - feed >= 1.3.2.1
-- containers
 - hashable
-- conduit-extra
-- vector
 - fast-tagsoup
 - tagsoup
 - recursion-schemes
@@ -47,7 +41,7 @@ dependencies:
 - modern-uri
 - unliftio
 - http-api-data
-- file-embed
+- generic-data
 
 language: GHC2021
 

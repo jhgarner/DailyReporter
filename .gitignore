@@ -4,3 +4,4 @@ build/
 DailyReporter-exe*
 result
 config.json
+dist-newstyle

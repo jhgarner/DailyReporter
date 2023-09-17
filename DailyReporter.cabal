@@ -4,7 +4,7 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 03473e109714631ad5eb80de13b65dbced11a6c4a2d4e94b9da5ddfafbb1dea5
+-- hash: 6ac4658defc25134c093efe60b4a810959b9140cddcc51e20e03e8a941da61e4
 
 name:           DailyReporter
 version:        0.1.0.0
@@ -48,23 +48,25 @@ library
       Config
       Fallible.Retryable
       Fallible.Throwing
-      File.Class
-      File.Filesystem
       Fresh.DateCounter
       Lib
+      Logging.Context
       Logging.Errors
       Logging.Info
       Matrix.Class
       Matrix.Debug
       Matrix.MatrixT
+      Message
       Network.Class
       Network.Network
-      Parser.HtmlParser
-      Parser.JsonParser
       Sources.Apod
       Sources.Buttersafe
       Sources.Ec
       Sources.Lib
+      Sources.Lib.Scraper
+      Sources.Lib.Source
+      Sources.Lib.SourceFactory
+      Sources.Lib.SourceResult
       Sources.PDL
       Sources.Qwantz
       Sources.Smbc
@@ -101,27 +103,21 @@ library
     , base >=4.7 && <5
     , bytestring
     , cleff
-    , conduit-extra
-    , containers
     , deriving-aeson
     , fast-tagsoup
     , feed >=1.3.2.1
-    , file-embed
+    , generic-data
     , hashable
     , http-api-data
-    , http-conduit
     , indexed-traversable
-    , lens
-    , lens-aeson
     , modern-uri
     , recursion-schemes
     , req
-    , scalpel
+    , scalpel-core
     , tagsoup
     , text
     , time
     , unliftio
-    , vector
   mixins:
       base hiding (Prelude)
   default-language: GHC2021
@@ -155,27 +151,21 @@ library CustomPrelude
     , base >=4.7 && <5
     , bytestring
     , cleff
-    , conduit-extra
-    , containers
     , deriving-aeson
     , fast-tagsoup
     , feed >=1.3.2.1
-    , file-embed
+    , generic-data
     , hashable
     , http-api-data
-    , http-conduit
     , indexed-traversable
-    , lens
-    , lens-aeson
     , modern-uri
     , recursion-schemes
     , req
-    , scalpel
+    , scalpel-core
     , tagsoup
     , text
     , time
     , unliftio
-    , vector
   mixins:
       base (Prelude as BasePrelude)
     , base 
@@ -211,27 +201,21 @@ executable DailyReporter-exe
     , base >=4.7 && <5
     , bytestring
     , cleff
-    , conduit-extra
-    , containers
     , deriving-aeson
     , fast-tagsoup
     , feed >=1.3.2.1
-    , file-embed
+    , generic-data
     , hashable
     , http-api-data
-    , http-conduit
     , indexed-traversable
-    , lens
-    , lens-aeson
     , modern-uri
     , recursion-schemes
     , req
-    , scalpel
+    , scalpel-core
     , tagsoup
     , text
     , time
     , unliftio
-    , vector
   default-language: GHC2021
 
 test-suite DailyReporter-test
@@ -273,28 +257,22 @@ test-suite DailyReporter-test
     , base >=4.7 && <5
     , bytestring
     , cleff
-    , conduit-extra
-    , containers
     , deriving-aeson
     , fast-tagsoup
     , feed >=1.3.2.1
-    , file-embed
+    , generic-data
     , hashable
     , hspec
     , http-api-data
-    , http-conduit
     , indexed-traversable
-    , lens
-    , lens-aeson
     , modern-uri
     , recursion-schemes
     , req
-    , scalpel
+    , scalpel-core
     , tagsoup
     , text
     , time
     , unliftio
-    , vector
   mixins:
       base hiding (Prelude)
   default-language: GHC2021

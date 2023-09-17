@@ -31,25 +31,25 @@ runRetryableTimer isWorthRetrying = interpret \case
               toEff $ fallback error
         Right result -> pure result
 
-handleFailureWith :: (_) => (HttpException -> Eff es a) -> Eff (Throw HttpException : es) a -> Eff es a
+handleFailureWith :: _ => (exception -> Eff es a) -> Eff (Throw exception : es) a -> Eff es a
 handleFailureWith = flip runWithRetries
 
 allowFailureOf :: (Monoid a, _) => Eff (Throw HttpException : es) a -> Eff es a
 allowFailureOf = runWithRetriesFallback mempty
 
-runWithRetriesFallback :: (_) => a -> Eff (Throw HttpException : es) a -> Eff es a
+runWithRetriesFallback :: _ => a -> Eff (Throw HttpException : es) a -> Eff es a
 runWithRetriesFallback fallback action = runWithRetries action (const $ pure fallback)
 
-orFallbackTo :: (_) => Eff (Throw HttpException : es) a -> a -> Eff es a
+orFallbackTo :: _ => Eff (Throw HttpException : es) a -> a -> Eff es a
 orFallbackTo action fallback = runWithRetries action (const $ pure fallback)
 
-fallingBackTo :: (_) => a -> Eff (Throw HttpException : es) a -> Eff es a
+fallingBackTo :: _ => a -> Eff (Throw HttpException : es) a -> Eff es a
 fallingBackTo fallback action = runWithRetries action (const $ pure fallback)
 
-detectFailuresOf :: (_) => Eff (Throw HttpException : es) a -> Eff es (Maybe a)
+detectFailuresOf :: _ => Eff (Throw HttpException : es) a -> Eff es (Maybe a)
 detectFailuresOf action = runWithRetries (fmap Just action) (const $ pure Nothing)
 
-onSuccessOf :: (_) => Eff es b -> Eff (Throw HttpException : es) a -> Eff es ()
+onSuccessOf :: _ => Eff es b -> Eff (Throw HttpException : es) a -> Eff es ()
 onSuccessOf onSuccess fallible =
   detectFailuresOf fallible >>= \case
     Just _ -> void onSuccess

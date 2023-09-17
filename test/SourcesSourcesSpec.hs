@@ -1,70 +1,63 @@
 module SourcesSourcesSpec where
-import Sources.Sources (isNewSource)
-import Test.Hspec
-import Logging.Info (InfoLog)
-import Logging.Errors (ErrorLog)
+
 import Fallible.Retryable
 import Fallible.Throwing
+import Logging.Errors (ErrorLog)
+import Logging.Info (InfoLog)
 import Matrix.Class
 import Mock
-import Sources.Lib
 import Network.HTTP.Req
+import Sources.Lib
+import Sources.Sources (isNewSource)
+import Test.Hspec
 
 spec :: Spec
 spec = do
-    testIsNewSource
+  testIsNewSource
 
 testIsNewSource :: Spec
 testIsNewSource =
-    describe "Checking if a source is new" do
-        isNewSourceDuplicateCase
-        isNewSourceNotDuplicateCase
-        isNewSourceFailedToRun
-        isNewIfMatrixDoesNotRespond
+  describe "Checking if a source is new" do
+    isNewSourceDuplicateCase
+    isNewSourceNotDuplicateCase
+    isNewIfMatrixDoesNotRespond
 
-isNewSourceDuplicateCase = 
-    it "the source is a duplicate" do
-        result <- runWithMocks mocks $ isNewSource testingSource
-        result `shouldBe` False
-    where
-        mocks = mock \(GetHashFromRoom x) -> pure $ hash testingParams
+isNewSourceDuplicateCase =
+  it "the source is a duplicate" do
+    result <- runWithMocks mocks $ isNewSource "testing" []
+    result `shouldBe` False
+ where
+  mocks = mock \(GetHashFromRoom "testing") -> pure $ hash testingParams
 
-isNewSourceNotDuplicateCase = 
-    it "the source is not a duplicate" do
-        result <- runWithMocks mocks $ isNewSource testingSource
-        result `shouldBe` True
-    where
-        mocks = mock \(GetHashFromRoom x) -> pure "old"
+isNewSourceNotDuplicateCase =
+  it "the source is not a duplicate" do
+    result <- runWithMocks mocks $ isNewSource "testing" []
+    result `shouldBe` True
+ where
+  mocks = mock \(GetHashFromRoom "testing") -> pure "old"
 
-isNewSourceFailedToRun = 
-    it "the source had an error" do
-        result <- runWithMocks [] $ isNewSource failedSource
-        result `shouldBe` True
-
-isNewIfMatrixDoesNotRespond = 
-    it "matrix didn't respond" do
-        result <- runWithMocks mocks $ isNewSource failedSource
-        result `shouldBe` True
-    where
-        mocks = mock \(GetHashFromRoom x) -> throw $ VanillaHttpException undefined
+isNewIfMatrixDoesNotRespond =
+  it "matrix didn't respond" do
+    result <- runWithMocks mocks $ isNewSource "testing" []
+    result `shouldBe` True
+ where
+  mocks = mock \(GetHashFromRoom x) -> throw $ VanillaHttpException undefined
 
 runWithMocks :: [Mock MatrixInRoom] -> _ -> _
 runWithMocks mocked = runIOE . interpretMocked mocked . handleRetries @HttpException . dumpLogs
 
-testingParams :: Params
+testingParams :: [Message]
 testingParams = mempty
 
-testingSource :: EvaluatedSource
-testingSource = ("testing", Right testingParams)
-
-failedSource :: EvaluatedSource
+-- failedSource :: EvaluatedSource
 failedSource = ("testing", Left "Error")
 
-dumpLogs :: Eff (InfoLog:ErrorLog:es) ~> Eff es
+dumpLogs :: Eff (InfoLog : ErrorLog : es) ~> Eff es
 dumpLogs = ignoreOutput . ignoreOutput
 
-handleRetries :: (Typeable e, Show e) => Eff (Retryable e:es) ~> Eff es
+handleRetries :: (Typeable e, Show e) => Eff (Retryable e : es) ~> Eff es
 handleRetries = interpret \case
-    RunWithRetries action fallback -> toEff (runThrowing action) >>= \case
-        Left e -> toEff $ fallback e
-        Right result -> pure result
+  RunWithRetries action fallback ->
+    toEff (runThrowing action) >>= \case
+      Left e -> toEff $ fallback e
+      Right result -> pure result

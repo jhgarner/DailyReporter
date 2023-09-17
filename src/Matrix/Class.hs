@@ -1,5 +1,5 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Matrix.Class where
 
@@ -9,7 +9,7 @@ import Network.Class
 import Tracing
 
 data Matrix :: Effect where
-  UploadImage :: NetworkError :> effs => Text -> Matrix (Eff effs) Text
+  UploadImage :: NetworkError :> effs => Url Https -> Matrix (Eff effs) MyUrl
   GetHash :: NetworkError :> effs => RoomId -> Text -> Matrix (Eff effs) Text
   PutHash :: (NetworkError :> effs, Hashable a) => RoomId -> Text -> a -> Matrix (Eff effs) ()
   PutMsg :: NetworkError :> effs => RoomId -> Text -> Matrix (Eff effs) ()
