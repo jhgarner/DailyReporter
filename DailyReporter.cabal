@@ -4,7 +4,7 @@ cabal-version: 2.0
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6ac4658defc25134c093efe60b4a810959b9140cddcc51e20e03e8a941da61e4
+-- hash: 22e05a8797dc3a69bc03963351399c1f7ebd68c8d234d0a9a3774bb3f71d225d
 
 name:           DailyReporter
 version:        0.1.0.0
@@ -21,23 +21,6 @@ extra-source-files:
     README.md
     ChangeLog.md
     LICENSE
-    data/parsers/Apod.json
-    data/parsers/Buttersafe.json
-    data/parsers/Ec.json
-    data/parsers/PDL.json
-    data/parsers/Qwantz.json
-    data/parsers/Smbc.json
-    data/parsers/Weather.json
-    data/parsers/Xkcd.json
-    data/templates/Apod.html
-    data/templates/Buttersafe.html
-    data/templates/Ec.html
-    data/templates/PDL.html
-    data/templates/Qwantz.html
-    data/templates/Smbc.html
-    data/templates/Weather.html
-    data/templates/Word.html
-    data/templates/Xkcd.html
 
 source-repository head
   type: git
@@ -62,6 +45,7 @@ library
       Sources.Apod
       Sources.Buttersafe
       Sources.Ec
+      Sources.Exocomics
       Sources.Lib
       Sources.Lib.Scraper
       Sources.Lib.Source

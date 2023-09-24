@@ -14,6 +14,7 @@ import Message
 import Sources.Apod
 import Sources.Buttersafe
 import Sources.Ec
+import Sources.Exocomics
 import Sources.Lib
 import Sources.Lib.SourceResult
 import Sources.PDL
@@ -27,7 +28,7 @@ sendAllSources :: _ => Eff es ()
 sendAllSources = traverse_ sendSource allSources
 
 allSources :: _ => [Source es]
-allSources = [weather, apod, xkcd, ec, smbc, butter, pdl, qwantz, word]
+allSources = [weather, apod, xkcd, ec, smbc, butter, pdl, qwantz, exocomics, word]
 
 sendSource :: _ => Source es -> Eff es ()
 sendSource Source{..} = do
