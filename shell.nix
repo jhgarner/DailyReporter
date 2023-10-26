@@ -1,11 +1,11 @@
 let
-  pkgs = import <nixpkgs> {};
+  pkgs = import <nixpkgs> { };
 in
 pkgs.mkShell {
   buildInputs = [
     pkgs.ghc
     pkgs.haskell-language-server
-    pkgs.haskellPackages.fourmolu_0_13_1_0
+    pkgs.haskellPackages.fourmolu
     # (pkgs.haskell.packages.ghc944.haskell-language-server.override { supportedGhcVersions = [ "944" ]; })
     pkgs.niv
     pkgs.cabal2nix

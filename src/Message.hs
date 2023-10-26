@@ -3,6 +3,8 @@
 
 module Message where
 
+import Fallible.Throwing
+import Sources.Lib.SourceResult (SourceError (SourceError))
 import Text.URI
 import Text.URI.QQ
 
@@ -21,14 +23,15 @@ data MessageCollector m a where
   MakeLink :: Url Https -> Text -> MessageCollector m ()
 makeEffect ''MessageCollector
 
-collectMessages :: Eff (MessageCollector : es) a -> Eff es [Message]
+collectMessages :: Throw SourceError :> es => Eff (MessageCollector : es) a -> Eff es [Message]
 collectMessages =
   fmap getCollected . execState (CollectedMessages []) . reinterpret \case
     MakeText message -> do
       modify $ addMessage $ Paragraph message
     MakeImage src -> do
       -- Normalize the URL to always have https at the start
-      let Just uri = mkURI src
+      let encoded = replace " " "%20" src
+      uri <- maybe (throw $ SourceError [f|bad url {src}|]) pure $ mkURI encoded
       let withScheme = uri{uriScheme = Just [scheme|https|]}
       -- Guaranteed to be valid because we set the scheme to https above
       let (url, _) = fromJust $ useHttpsURI withScheme
