@@ -34,7 +34,7 @@ collectMessages =
       uri <- maybe (throw $ SourceError [f|bad url {src}|]) pure $ mkURI encoded
       let withScheme = uri{uriScheme = Just [scheme|https|]}
       -- Guaranteed to be valid because we set the scheme to https above
-      let (url, _) = fromJust $ useHttpsURI withScheme
+      let (url, _) = fromMaybe (error [f|url got janky {src}|]) $ useHttpsURI withScheme
       modify $ addMessage $ Link url (Img $ HttpsUrl url)
     MakeTitle link message -> do
       modify $ addMessage $ Link link (Header message)

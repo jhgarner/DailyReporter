@@ -7,7 +7,7 @@ pdl = makeSource "PDL" do
   -- Unfortunately the title is only in the RSS feed...
   getTitle feed >>= makeTitle home
   usingHtmlUrl home do
-    srcs <- getAttrs "src" `on` "img" `inside` ("div" `withClass` "post")
+    srcs <- getAttrs "href" `on` "a" `inside` ("div" `withClass` "entry-content")
     traverse makeImage srcs
 
 home = https "poorlydrawnlines.com"
