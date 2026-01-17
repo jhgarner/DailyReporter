@@ -6,9 +6,9 @@ import Data.Time.Clock
 runFreshWithDate ::
   forall a es.
   IOE :> es =>
-  Eff (Fresh String : Fresh Int : es) ~> Eff es
+  Eff (Fresh String : es) ~> Eff es
 runFreshWithDate =
-  runFreshMVar . interpret_ \Fresh -> do
+  using runFreshMVar $ interpret_ \Fresh -> do
     UTCTime{utctDay} <- liftIO getCurrentTime
     counter <- fresh @Int
     pure [f|{fromEnum utctDay}day{counter}|]

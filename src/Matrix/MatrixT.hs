@@ -1,7 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module Matrix.MatrixT (runRealMatrix, loginMatrix, usingActiveRoom) where
+module Matrix.MatrixT (runRealMatrix, loginMatrix, usingActiveRoom, fakeLogin) where
 
 import Config (Config (deviceId), RoomId (RoomId))
 import Config qualified
@@ -72,6 +72,9 @@ loginMatrix actions = do
           }
   loginResponse <- post (baseUrl /: "client" /: "v3" /: "login") (ReqBodyJson body) mempty `orFallbackTo` error "Bad"
   runInput loginResponse actions
+
+fakeLogin :: Eff (Input LoginResponse : es) ~> Eff es
+fakeLogin = runInput (LoginResponse $ SessionToken "fake")
 
 baseUrl :: Url 'Https
 baseUrl = https "matrix.org" /: "_matrix"
