@@ -12,7 +12,7 @@ logError :: ErrorLog :> es => Text -> Eff es ()
 logError = output . ErrorText
 
 printErrorStream :: [IOE, LogContext] :>> es => Interprets ErrorLog es
-printErrorStream = interpret \case
+printErrorStream = interpret_ \case
   Output (ErrorText message) -> do
     context <- getLoggingContext
     liftIO $ hPutStrLn stderr [f|[{context}] {message}|]

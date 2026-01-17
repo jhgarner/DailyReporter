@@ -43,7 +43,7 @@ checkSource :: Eff [Throw SourceError, Input Config, Network, Retryable HttpExce
 checkSource action name = do
   let expectedFileName = "test/Sources/" <> name
   expected <- Data.ByteString.readFile $ unpack expectedFileName
-  possiblyActual <- runIOE $ fakeNetwork $ testConfig $ runThrowing action
+  possiblyActual <- runIOE $ fakeNetwork $ testConfig $ runThrow action
   let actual = either (error . show) id possiblyActual
   Data.Text.IO.putStrLn $ decodeUtf8 $ B.toStrict $ encode actual
   Just actual `shouldBe` decodeStrict' expected
@@ -52,12 +52,12 @@ fakeNetwork :: IOE :> es => Eff (Network : Retryable HttpException : es) ~> Eff 
 fakeNetwork = handleRetries . handleNetwork
  where
   handleNetwork :: IOE :> es => Eff (Network : es) ~> Eff es
-  handleNetwork = interpret \case
+  handleNetwork = interpret_ \case
     Get url _ -> liftIO $ Data.ByteString.readFile $ unpack $ "test/Sources/" <> renderUrl url <> ".html"
-  handleRetries = interpret \case
-    RunWithRetries action _ -> flip fmap (toEff $ runThrowing action) \case
+  handleRetries = interpret \sender -> \case
+    RunWithRetries action _ -> pure $ flip fmap (runThrow action) \case
       Left e -> error $ show e
       Right result -> result
 
 testConfig :: Eff (Input Config : es) ~> Eff es
-testConfig = interpret \Input -> pure Config{weatherApikey = "key", long = "10", lat = "34", apodApikey = "key"}
+testConfig = interpret_ \Input -> pure Config{weatherApikey = "key", long = "10", lat = "34", apodApikey = "key"}

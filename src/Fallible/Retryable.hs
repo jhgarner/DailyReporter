@@ -1,5 +1,4 @@
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 module Fallible.Retryable where
 
@@ -10,25 +9,27 @@ import Tracing (Tracable)
 
 data Retryable e :: Effect where
   RunWithRetries :: Eff (Throw e : effs) a -> (e -> Eff effs a) -> Retryable e (Eff effs) a
-makeEffect ''Retryable
+
+runWithRetries :: Retryable e :> es => Eff (Throw e : es) a -> (e -> Eff es a) -> Eff es a
+runWithRetries action onError = send $ RunWithRetries action onError
 
 runRetryableTimer :: (Show e, Typeable e, _) => (e -> Bool) -> Interprets (Retryable e) es
-runRetryableTimer isWorthRetrying = interpret \case
-  RunWithRetries action fallback -> cata @Natural runRetries 5
+runRetryableTimer isWorthRetrying = interpret \sender -> \case
+  RunWithRetries action fallback -> pure $ cata @Natural runRetries 5
    where
     runRetries nextAttempt =
-      toEff (runThrowing action) >>= \case
+      runThrow action >>= \case
         Left error
           | isWorthRetrying error -> do
-              logError [f|Failed with error: {show error}|]
+              sender @ErrorLog $ logError [f|Failed with error: {show error}|]
               case nextAttempt of
                 Just nextAttempt -> do
-                  liftIO $ threadDelay 5000000
+                  sender @EIO $ liftIO $ threadDelay 5000000
                   nextAttempt
-                Nothing -> toEff $ fallback error
+                Nothing -> fallback error
           | otherwise -> do
-              logError [f|Failed with error and not retrying: {show error}|]
-              toEff $ fallback error
+              sender @ErrorLog $ logError [f|Failed with error and not retrying: {show error}|]
+              fallback error
         Right result -> pure result
 
 handleFailureWith :: _ => (exception -> Eff es a) -> Eff (Throw exception : es) a -> Eff es a

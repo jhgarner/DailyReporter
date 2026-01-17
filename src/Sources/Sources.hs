@@ -30,7 +30,7 @@ sendAllSources = traverse_ sendSource allSources
 allSources :: _ => [Source es]
 allSources = [weather, apod, xkcd, ec, smbc, butter, pdl, qwantz, exocomics, word]
 
-sendSource :: _ => Source es -> Eff es ()
+sendSource :: _ => Source _ -> Eff es ()
 sendSource Source{..} = do
   withContext name do
     logInfo [f|Running Source|]
@@ -38,9 +38,9 @@ sendSource Source{..} = do
     logInfo [f|Source Ran|]
 
 sourceErrorHandler :: _ => SourceError -> Eff es ()
-sourceErrorHandler error = do
-  logError [f|Source failed: {show error}|]
-  allowFailureOf $ putMsgInRoom $ pack $ show error
+sourceErrorHandler (SourceError error) = do
+  logError [f|Source failed: {error}|]
+  allowFailureOf $ putMsgInRoom error
 
 evalSource :: _ => Text -> Eff es [Message] -> Eff es ()
 evalSource hashKey action = do

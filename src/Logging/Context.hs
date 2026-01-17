@@ -1,14 +1,18 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Logging.Context where
 
-import Cleff.Reader (Reader, asks, local, runReader)
+import Control.Monad.Identity
 import Data.Text (intercalate)
+import Theseus.Effect.Reader (Reader, asks, local, runReader)
 
 data LogContext m a where
-  WithContext :: Text -> m a -> LogContext m a
+  WithContext :: Text -> Eff (LogContext : es) a -> LogContext (Eff es) a
   GetLoggingContext :: LogContext m Text
-makeEffect ''LogContext
+
+withContext :: LogContext :> es => Text -> Eff (LogContext : es) a -> Eff es a
+withContext ctx action = send $ WithContext ctx action
+
+getLoggingContext :: LogContext :> es => Eff es Text
+getLoggingContext = send GetLoggingContext
 
 newtype Context = Context [Text]
 
@@ -18,12 +22,12 @@ addContext newContext (Context contexts) = Context $ newContext : contexts
 getContext :: Context -> Text
 getContext (Context contexts) = intercalate " | " contexts
 
-runWithContext :: Eff (Reader Context : es) ~> Eff es
-runWithContext = runReader (Context [])
-
 runLogContext :: Eff (LogContext : es) ~> Eff es
-runLogContext =
-  runWithContext . reinterpret \case
-    WithContext context action ->
-      local (addContext context) $ toEff action
-    GetLoggingContext -> asks getContext
+runLogContext = go $ Context []
+ where
+  go :: Context -> Eff (LogContext : es) ~> Eff es
+  go ctx =
+    interpret \sender -> \case
+      WithContext context action ->
+        pure $ go (addContext context ctx) action
+      GetLoggingContext -> pure $ pure $ getContext ctx

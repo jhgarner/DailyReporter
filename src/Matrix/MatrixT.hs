@@ -18,20 +18,18 @@ type AllIn effects stack = effects :>> stack
 
 -- Used to actually communicate with Matrix
 runRealMatrix :: forall es. [Input LoginResponse, Fresh String, Network] `AllIn` es => Interprets Matrix es
-runRealMatrix = interpret handler
- where
-  handler :: forall esSend. Handling esSend Matrix es => Matrix (Eff esSend) ~> Eff es
-  handler action = do
-    auth <- getAuth
-    txnId <- tshow <$> fresh @String
-    interpretFromHandler @Network @esSend case action of
+runRealMatrix action = do
+  auth <- getAuth
+  txnId <- tshow <$> fresh @String
+  with action $ interpret \sender ->
+    pure . \case
       PutHash roomId key toHash -> do
-        put (roomUrl /~ roomId /: "state" /: hashEventType /: key) (Hashes $ hash toHash) auth
+        sender @Network $ put (roomUrl /~ roomId /: "state" /: hashEventType /: key) (Hashes $ hash toHash) auth
       GetHash roomId key -> do
-        response <- get (roomUrl /~ roomId /: "state" /: hashEventType /: key) auth
+        response <- sender @Network $ get (roomUrl /~ roomId /: "state" /: hashEventType /: key) auth
         pure $ maybe "0" extractHash $ decodeStrict' response
       PutMsg roomId contents -> do
-        put (roomUrl /~ roomId /: "send" /: "m.room.message" /: txnId) msg auth
+        sender @Network $ put (roomUrl /~ roomId /: "send" /: "m.room.message" /: txnId) msg auth
        where
         msg =
           Msg
@@ -41,12 +39,12 @@ runRealMatrix = interpret handler
             , msgtype = "m.text"
             }
       UploadImage url -> do
-        image <- get url mempty
+        image <- sender @Network $ get url mempty
         let imageType = last $ splitOn "." $ renderUrl url
         let contentType = header "Content-Type" [f|image/{imageType}|]
-        response <- post (baseUrl /: "media" /: "v3" /: "upload") (ReqBodyBs image) (auth <> contentType)
+        response <- sender @Network $ post (baseUrl /: "media" /: "v3" /: "upload") (ReqBodyBs image) (auth <> contentType)
         pure $ MxcUrl $ contentUri response
-
+ where
   getAuth :: _ => Eff es (Option Https)
   getAuth = inputs $ oAuth2Bearer . encodeUtf8 . token . accessToken
 
@@ -73,7 +71,7 @@ loginMatrix actions = do
           , loginRequestType = "m.login.password"
           }
   loginResponse <- post (baseUrl /: "client" /: "v3" /: "login") (ReqBodyJson body) mempty `orFallbackTo` error "Bad"
-  runInputConst loginResponse actions
+  runInput loginResponse actions
 
 baseUrl :: Url 'Https
 baseUrl = https "matrix.org" /: "_matrix"
@@ -122,9 +120,8 @@ newtype SessionToken = SessionToken {token :: Text}
   deriving (FromJSON) via CustomJSON '[UnwrapUnaryRecords] SessionToken
 
 usingActiveRoom :: forall es. Matrix :> es => RoomId -> Interprets MatrixInRoom es
-usingActiveRoom roomId = interpret handler
- where
-  handler :: forall esSend. Handling esSend MatrixInRoom es => MatrixInRoom (Eff esSend) ~> Eff es
-  handler (GetHashFromRoom key) = sendHandler @esSend $ GetHash roomId key
-  handler (PutHashInRoom key hash) = sendHandler @esSend $ PutHash roomId key hash
-  handler (PutMsgInRoom msg) = sendHandler @esSend $ PutMsg roomId msg
+usingActiveRoom roomId = interpret \sender ->
+  pure . \case
+    GetHashFromRoom key -> sender @Matrix $ getHash roomId key
+    PutHashInRoom key hash -> sender @Matrix $ putHash roomId key hash
+    PutMsgInRoom msg -> sender @Matrix $ putMsg roomId msg

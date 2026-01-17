@@ -1,5 +1,4 @@
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 module Matrix.Class where
 
@@ -13,7 +12,18 @@ data Matrix :: Effect where
   GetHash :: NetworkError :> effs => RoomId -> Text -> Matrix (Eff effs) Text
   PutHash :: (NetworkError :> effs, Hashable a) => RoomId -> Text -> a -> Matrix (Eff effs) ()
   PutMsg :: NetworkError :> effs => RoomId -> Text -> Matrix (Eff effs) ()
-makeEffect ''Matrix
+
+uploadImage :: (Matrix :> effs, NetworkError :> effs) => Url Https -> Eff effs MyUrl
+uploadImage url = send $ UploadImage url
+
+getHash :: (Matrix :> effs, NetworkError :> effs) => RoomId -> Text -> Eff effs Text
+getHash id key = send $ GetHash id key
+
+putHash :: (Matrix :> effs, NetworkError :> effs, Hashable a) => RoomId -> Text -> a -> Eff effs ()
+putHash id key a = send $ PutHash id key a
+
+putMsg :: (Matrix :> effs, NetworkError :> effs) => RoomId -> Text -> Eff effs ()
+putMsg id msg = send $ PutMsg id msg
 
 instance Tracable Matrix where
   traceEffect (UploadImage _) = [f|UploadImage|]
@@ -25,4 +35,12 @@ data MatrixInRoom :: Effect where
   PutHashInRoom :: (NetworkError :> effs, Hashable a) => Text -> a -> MatrixInRoom (Eff effs) ()
   GetHashFromRoom :: NetworkError :> effs => Text -> MatrixInRoom (Eff effs) Text
   PutMsgInRoom :: NetworkError :> effs => Text -> MatrixInRoom (Eff effs) ()
-makeEffect ''MatrixInRoom
+
+getHashFromRoom :: (MatrixInRoom :> effs, NetworkError :> effs) => Text -> Eff effs Text
+getHashFromRoom key = send $ GetHashFromRoom key
+
+putHashInRoom :: (MatrixInRoom :> effs, NetworkError :> effs, Hashable a) => Text -> a -> Eff effs ()
+putHashInRoom key a = send $ PutHashInRoom key a
+
+putMsgInRoom :: (MatrixInRoom :> effs, NetworkError :> effs) => Text -> Eff effs ()
+putMsgInRoom msg = send $ PutMsgInRoom msg

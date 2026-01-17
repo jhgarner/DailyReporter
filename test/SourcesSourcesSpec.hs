@@ -56,8 +56,9 @@ dumpLogs :: Eff (InfoLog : ErrorLog : es) ~> Eff es
 dumpLogs = ignoreOutput . ignoreOutput
 
 handleRetries :: (Typeable e, Show e) => Eff (Retryable e : es) ~> Eff es
-handleRetries = interpret \case
+handleRetries = interpret \sender -> \case
   RunWithRetries action fallback ->
-    toEff (runThrowing action) >>= \case
-      Left e -> toEff $ fallback e
-      Right result -> pure result
+    pure $
+      runThrow action >>= \case
+        Left e -> fallback e
+        Right result -> pure result

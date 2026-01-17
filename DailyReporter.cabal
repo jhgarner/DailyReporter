@@ -1,262 +1,296 @@
-cabal-version: 2.0
-
--- This file has been generated from package.yaml by hpack version 0.35.2.
---
--- see: https://github.com/sol/hpack
---
--- hash: 22e05a8797dc3a69bc03963351399c1f7ebd68c8d234d0a9a3774bb3f71d225d
-
-name:           DailyReporter
-version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/jhgarner/DailyReporter#readme>
-homepage:       https://github.com/jhgarner/DailyReporter#readme
-bug-reports:    https://github.com/jhgarner/DailyReporter/issues
-author:         Jackson Garner
-maintainer:     jhgarner@mymail.mines.edu
-copyright:      2018 Jackson Garner
-license:        MIT
-license-file:   LICENSE
-build-type:     Simple
+cabal-version: 3.12
+name: DailyReporter
+version: 0.1.0.0
+description: Please see the README on GitHub at <https://github.com/jhgarner/DailyReporter#readme>
+homepage: https://github.com/jhgarner/DailyReporter#readme
+bug-reports: https://github.com/jhgarner/DailyReporter/issues
+author: Jackson Garner
+maintainer: jhgarner@mymail.mines.edu
+copyright: 2018 Jackson Garner
+license: MIT
+license-file: LICENSE
+build-type: Simple
 extra-source-files:
-    README.md
-    ChangeLog.md
-    LICENSE
+  ChangeLog.md
+  LICENSE
+  README.md
 
 source-repository head
   type: git
   location: https://github.com/jhgarner/DailyReporter
 
-library
-  exposed-modules:
-      Config
-      Fallible.Retryable
-      Fallible.Throwing
-      Fresh.DateCounter
-      Lib
-      Logging.Context
-      Logging.Errors
-      Logging.Info
-      Matrix.Class
-      Matrix.Debug
-      Matrix.MatrixT
-      Message
-      Network.Class
-      Network.Network
-      Sources.Apod
-      Sources.Buttersafe
-      Sources.Ec
-      Sources.Exocomics
-      Sources.Lib
-      Sources.Lib.Scraper
-      Sources.Lib.Source
-      Sources.Lib.SourceFactory
-      Sources.Lib.SourceResult
-      Sources.PDL
-      Sources.Qwantz
-      Sources.Smbc
-      Sources.Sources
-      Sources.Weather
-      Sources.Word
-      Sources.Xkcd
-      Tracing
-  other-modules:
-      Paths_DailyReporter
-  autogen-modules:
-      Paths_DailyReporter
-  hs-source-dirs:
-      src
-  default-extensions:
-      BlockArguments
-      TypeFamilies
-      GADTs
-      LambdaCase
-      TupleSections
-      OverloadedStrings
-      DataKinds
-      PartialTypeSignatures
-      QualifiedDo
-      QuasiQuotes
-      ScopedTypeVariables
-      DerivingStrategies
-      DerivingVia
-  ghc-options: -Wno-partial-type-signatures
-  build-depends:
-      CustomPrelude
-    , PyF
-    , aeson
-    , base >=4.7 && <5
-    , bytestring
-    , cleff
-    , deriving-aeson
-    , fast-tagsoup
-    , feed >=1.3.2.1
-    , generic-data
-    , hashable
-    , http-api-data
-    , indexed-traversable
-    , modern-uri
-    , recursion-schemes
-    , req
-    , scalpel-core
-    , tagsoup
-    , text
-    , time
-    , unliftio
-  mixins:
-      base hiding (Prelude)
-  default-language: GHC2021
-
 library CustomPrelude
   exposed-modules:
-      Prelude
+    Prelude
+
   other-modules:
-      Paths_DailyReporter
+    Paths_DailyReporter
+
   autogen-modules:
-      Paths_DailyReporter
+    Paths_DailyReporter
+
   hs-source-dirs:
-      prelude
+    prelude
+
   default-extensions:
-      BlockArguments
-      TypeFamilies
-      GADTs
-      LambdaCase
-      TupleSections
-      OverloadedStrings
-      DataKinds
-      PartialTypeSignatures
-      QualifiedDo
-      QuasiQuotes
-      ScopedTypeVariables
-      DerivingStrategies
-      DerivingVia
+    BlockArguments
+    DataKinds
+    DerivingStrategies
+    DerivingVia
+    GADTs
+    LambdaCase
+    OverloadedStrings
+    PartialTypeSignatures
+    QualifiedDo
+    QuasiQuotes
+    ScopedTypeVariables
+    TupleSections
+    TypeFamilies
+
   build-depends:
-      PyF
-    , aeson
-    , base >=4.7 && <5
-    , bytestring
-    , cleff
-    , deriving-aeson
-    , fast-tagsoup
-    , feed >=1.3.2.1
-    , generic-data
-    , hashable
-    , http-api-data
-    , indexed-traversable
-    , modern-uri
-    , recursion-schemes
-    , req
-    , scalpel-core
-    , tagsoup
-    , text
-    , time
-    , unliftio
+    PyF,
+    aeson,
+    base >=4.7 && <5,
+    bytestring,
+    deriving-aeson,
+    fast-tagsoup,
+    feed >=1.3.2.1,
+    generic-data,
+    hashable,
+    http-api-data,
+    indexed-traversable,
+    modern-uri,
+    mtl,
+    recursion-schemes,
+    req,
+    scalpel-core,
+    tagsoup,
+    text,
+    theseus,
+    time,
+    unliftio,
+
   mixins:
-      base (Prelude as BasePrelude)
-    , base 
+    base (Prelude as BasePrelude),
+    base,
+
+  default-language: GHC2021
+
+library
+  exposed-modules:
+    Config
+    Fallible.Retryable
+    Fallible.Throwing
+    Fresh.DateCounter
+    Lib
+    Logging.Context
+    Logging.Errors
+    Logging.Info
+    Matrix.Class
+    Matrix.Debug
+    Matrix.MatrixT
+    Message
+    Network.Class
+    Network.Network
+    Sources.Apod
+    Sources.Buttersafe
+    Sources.Ec
+    Sources.Exocomics
+    Sources.Lib
+    Sources.Lib.Scraper
+    Sources.Lib.Source
+    Sources.Lib.SourceFactory
+    Sources.Lib.SourceResult
+    Sources.PDL
+    Sources.Qwantz
+    Sources.Smbc
+    Sources.Sources
+    Sources.Weather
+    Sources.Word
+    Sources.Xkcd
+    Tracing
+
+  other-modules:
+    Paths_DailyReporter
+
+  autogen-modules:
+    Paths_DailyReporter
+
+  hs-source-dirs:
+    src
+
+  default-extensions:
+    BlockArguments
+    DataKinds
+    DerivingStrategies
+    DerivingVia
+    GADTs
+    LambdaCase
+    OverloadedStrings
+    PartialTypeSignatures
+    QualifiedDo
+    QuasiQuotes
+    ScopedTypeVariables
+    TupleSections
+    TypeFamilies
+
+  ghc-options: -Wno-partial-type-signatures
+  build-depends:
+    DailyReporter:CustomPrelude,
+    PyF,
+    aeson,
+    base >=4.7 && <5,
+    bytestring,
+    deriving-aeson,
+    fast-tagsoup,
+    feed >=1.3.2.1,
+    generic-data,
+    hashable,
+    http-api-data,
+    indexed-traversable,
+    modern-uri,
+    mtl,
+    recursion-schemes,
+    req,
+    scalpel-core,
+    tagsoup,
+    text,
+    theseus,
+    time,
+    unliftio,
+
+  mixins:
+    base hiding (Prelude)
+
   default-language: GHC2021
 
 executable DailyReporter-exe
   main-is: Main.hs
   other-modules:
-      Paths_DailyReporter
+    Paths_DailyReporter
+
   autogen-modules:
-      Paths_DailyReporter
+    Paths_DailyReporter
+
   hs-source-dirs:
-      app
+    app
+
   default-extensions:
-      BlockArguments
-      TypeFamilies
-      GADTs
-      LambdaCase
-      TupleSections
-      OverloadedStrings
-      DataKinds
-      PartialTypeSignatures
-      QualifiedDo
-      QuasiQuotes
-      ScopedTypeVariables
-      DerivingStrategies
-      DerivingVia
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -W -Wno-partial-type-signatures
+    BlockArguments
+    DataKinds
+    DerivingStrategies
+    DerivingVia
+    GADTs
+    LambdaCase
+    OverloadedStrings
+    PartialTypeSignatures
+    QualifiedDo
+    QuasiQuotes
+    ScopedTypeVariables
+    TupleSections
+    TypeFamilies
+
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N
+    -W
+    -Wno-partial-type-signatures
+
   build-depends:
-      DailyReporter
-    , PyF
-    , aeson
-    , base >=4.7 && <5
-    , bytestring
-    , cleff
-    , deriving-aeson
-    , fast-tagsoup
-    , feed >=1.3.2.1
-    , generic-data
-    , hashable
-    , http-api-data
-    , indexed-traversable
-    , modern-uri
-    , recursion-schemes
-    , req
-    , scalpel-core
-    , tagsoup
-    , text
-    , time
-    , unliftio
+    DailyReporter,
+    PyF,
+    aeson,
+    base >=4.7 && <5,
+    bytestring,
+    deriving-aeson,
+    fast-tagsoup,
+    feed >=1.3.2.1,
+    generic-data,
+    hashable,
+    http-api-data,
+    indexed-traversable,
+    modern-uri,
+    mtl,
+    recursion-schemes,
+    req,
+    scalpel-core,
+    tagsoup,
+    text,
+    theseus,
+    time,
+    unliftio,
+
   default-language: GHC2021
 
 test-suite DailyReporter-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Mock
-      NetworkSpec
-      SourcesSourcesSpec
-      SourcesSpec
-      ThrowingSpec
-      Paths_DailyReporter
+    Mock
+    NetworkSpec
+    Paths_DailyReporter
+    SourcesSourcesSpec
+    SourcesSpec
+    ThrowingSpec
+
   autogen-modules:
-      Paths_DailyReporter
+    Paths_DailyReporter
+
   hs-source-dirs:
-      test
+    test
+
   default-extensions:
-      BlockArguments
-      TypeFamilies
-      GADTs
-      LambdaCase
-      TupleSections
-      OverloadedStrings
-      DataKinds
-      PartialTypeSignatures
-      QualifiedDo
-      QuasiQuotes
-      ScopedTypeVariables
-      DerivingStrategies
-      DerivingVia
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wno-partial-type-signatures
+    BlockArguments
+    DataKinds
+    DerivingStrategies
+    DerivingVia
+    GADTs
+    LambdaCase
+    OverloadedStrings
+    PartialTypeSignatures
+    QualifiedDo
+    QuasiQuotes
+    ScopedTypeVariables
+    TupleSections
+    TypeFamilies
+
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N
+    -Wno-partial-type-signatures
+
   build-tool-depends:
-      hspec-discover:hspec-discover
+    hspec-discover:hspec-discover
+
   build-depends:
-      CustomPrelude
-    , DailyReporter
-    , PyF
-    , aeson
-    , base >=4.7 && <5
-    , bytestring
-    , cleff
-    , deriving-aeson
-    , fast-tagsoup
-    , feed >=1.3.2.1
-    , generic-data
-    , hashable
-    , hspec
-    , http-api-data
-    , indexed-traversable
-    , modern-uri
-    , recursion-schemes
-    , req
-    , scalpel-core
-    , tagsoup
-    , text
-    , time
-    , unliftio
+    DailyReporter,
+    DailyReporter:CustomPrelude,
+    PyF,
+    aeson,
+    base >=4.7 && <5,
+    bytestring,
+    deriving-aeson,
+    fast-tagsoup,
+    feed >=1.3.2.1,
+    generic-data,
+    hashable,
+    hspec,
+    http-api-data,
+    indexed-traversable,
+    modern-uri,
+    mtl,
+    recursion-schemes,
+    req,
+    scalpel-core,
+    tagsoup,
+    text,
+    theseus,
+    time,
+    unliftio,
+
   mixins:
-      base hiding (Prelude)
+    base hiding (Prelude)
+
   default-language: GHC2021

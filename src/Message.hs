@@ -7,6 +7,7 @@ import Fallible.Throwing
 import Sources.Lib.SourceResult (SourceError (SourceError))
 import Text.URI
 import Text.URI.QQ
+import Theseus.Effect.State
 
 data Message
   = Header Text
@@ -21,11 +22,22 @@ data MessageCollector m a where
   MakeImage :: Text -> MessageCollector m ()
   MakeTitle :: Url Https -> Text -> MessageCollector m ()
   MakeLink :: Url Https -> Text -> MessageCollector m ()
-makeEffect ''MessageCollector
+
+makeText :: MessageCollector :> es => Text -> Eff es ()
+makeText msg = send $ MakeText msg
+
+makeImage :: MessageCollector :> es => Text -> Eff es ()
+makeImage img = send $ MakeImage img
+
+makeTitle :: MessageCollector :> es => Url Https -> Text -> Eff es ()
+makeTitle url title = send $ MakeTitle url title
+
+makeLink :: MessageCollector :> es => Url Https -> Text -> Eff es ()
+makeLink url txt = send $ MakeLink url txt
 
 collectMessages :: Throw SourceError :> es => Eff (MessageCollector : es) a -> Eff es [Message]
-collectMessages =
-  fmap getCollected . execState (CollectedMessages []) . reinterpret \case
+collectMessages action =
+  fmap getCollected $ with action $ using (execState (CollectedMessages [])) $ interpret_ \case
     MakeText message -> do
       modify $ addMessage $ Paragraph message
     MakeImage src -> do

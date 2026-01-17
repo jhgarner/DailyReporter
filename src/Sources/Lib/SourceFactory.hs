@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Sources.Lib.SourceFactory where
 
 import Data.Aeson.Decoding
@@ -17,7 +15,15 @@ data SourceFactory :: Effect where
   UsingHtmlUrl :: Throw SourceError :> es => Url 'Https -> Eff (ScraperEff : es) a -> SourceFactory (Eff es) a
   UsingHtml :: Throw SourceError :> es => ByteString -> Eff (ScraperEff : es) a -> SourceFactory (Eff es) a
   GetJson :: FromJSON a => Url 'Https -> Option 'Https -> SourceFactory m a
-makeEffect ''SourceFactory
+
+usingHtmlUrl :: (SourceFactory :> es, Throw SourceError :> es) => Url 'Https -> Eff (ScraperEff : es) a -> Eff es a
+usingHtmlUrl url action = send $ UsingHtmlUrl url action
+
+usingHtml :: (SourceFactory :> es, Throw SourceError :> es) => ByteString -> Eff (ScraperEff : es) a -> Eff es a
+usingHtml url action = send $ UsingHtml url action
+
+getJson :: (SourceFactory :> es, FromJSON a) => Url 'Https -> Option 'Https -> Eff es a
+getJson url opt = send $ GetJson url opt
 
 type SourceFactoryEnv es =
   Eff
@@ -34,15 +40,15 @@ runSourceFactory ::
   SourceFactoryEnv es a ->
   Eff (Throw SourceError : es) [Message]
 runSourceFactory name =
-  collectMessages . handleNetworkErrors . interpret \case
+  collectMessages . handleNetworkErrors . interpret \sender -> \case
     UsingHtmlUrl url action -> do
       site <- get url mempty
       let tags = parseTagsT site
-      toEff $ runScraperEff tags action
+      pure $ runScraperEff tags action
     UsingHtml site action -> do
-      toEff $ runScraperEff (parseTagsT site) action
+      pure $ runScraperEff (parseTagsT site) action
     GetJson url options -> do
       json <- get url options
-      either (throw . SourceError . pack) pure $ eitherDecodeStrict json
+      fmap pure $ either (throw . SourceError . pack) pure $ eitherDecodeStrict json
  where
   handleNetworkErrors = handleFailureWith $ throw . SourceError . pack . show

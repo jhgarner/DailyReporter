@@ -11,7 +11,7 @@ logInfo :: InfoLog :> es => Text -> Eff es ()
 logInfo = output . InfoText
 
 printInfoStream :: [IOE, LogContext] :>> es => Interprets InfoLog es
-printInfoStream = interpret \case
+printInfoStream = interpret_ \case
   Output (InfoText message) -> do
     context <- getLoggingContext
     liftIO $ Data.Text.IO.putStrLn [f|[{context}] {message}|]

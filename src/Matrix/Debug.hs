@@ -7,7 +7,7 @@ import Matrix.Class (Matrix (..))
 
 -- Used for testing without writing to Matrix
 runDebugMatrix :: InfoLog :> es => Interprets Matrix es
-runDebugMatrix = interpret \case
+runDebugMatrix = interpret_ \case
   UploadImage url -> pure $ HttpsUrl url
   GetHash _ key -> pure "1"
   PutHash _ key _ -> pure ()

@@ -1,0 +1,7 @@
+allow-newer: all
+source-repository-package
+  type: git
+  location: https://github.com/jhgarner/Theseus.git
+  tag: 7a0f203bc9d5c087913a6fab3a11c1cf7da585db
+packages:
+  .

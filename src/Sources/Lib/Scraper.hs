@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Sources.Lib.Scraper where
 
 import Fallible.Throwing
@@ -13,10 +11,23 @@ data ScraperEff m a where
   GetHtmls :: Selector -> ScraperEff m [Text]
   GetHtml :: Selector -> ScraperEff m Text
   GetText :: Selector -> ScraperEff m Text
-makeEffect ''ScraperEff
+
+getAttrs :: ScraperEff :> es => String -> Selector -> Eff es [Text]
+getAttrs a b = send $ GetAttrs a b
+getAttr :: ScraperEff :> es => String -> Selector -> Eff es Text
+getAttr a b = send $ GetAttr a b
+
+getHtmls :: ScraperEff :> es => Selector -> Eff es [Text]
+getHtmls a = send $ GetHtmls a
+
+getHtml :: ScraperEff :> es => Selector -> Eff es Text
+getHtml a = send $ GetHtml a
+
+getText :: ScraperEff :> es => Selector -> Eff es Text
+getText a = send $ GetText a
 
 runScraperEff :: Throw SourceError :> es => [Tag Text] -> Eff (ScraperEff : es) ~> Eff es
-runScraperEff tags = interpret \case
+runScraperEff tags = interpret_ \case
   GetAttrs name selector ->
     scrapeIt $ attrs name selector
   GetAttr name selector ->
