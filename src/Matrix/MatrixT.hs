@@ -20,7 +20,6 @@ type AllIn effects stack = effects :>> stack
 runRealMatrix :: forall es. [Input LoginResponse, Fresh String, Network] `AllIn` es => Interprets Matrix es
 runRealMatrix action = do
   auth <- getAuth
-  txnId <- tshow <$> fresh @String
   with action $ interpret \sender ->
     pure . \case
       PutHash roomId key toHash -> do
@@ -29,6 +28,7 @@ runRealMatrix action = do
         response <- sender @Network $ get (roomUrl /~ roomId /: "state" /: hashEventType /: key) auth
         pure $ maybe "0" extractHash $ decodeStrict' response
       PutMsg roomId contents -> do
+        txnId <- sender @(Fresh String) $ tshow <$> fresh @String
         sender @Network $ put (roomUrl /~ roomId /: "send" /: "m.room.message" /: txnId) msg auth
        where
         msg =
