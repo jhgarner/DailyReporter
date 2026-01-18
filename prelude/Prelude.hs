@@ -7,19 +7,6 @@ where
 
 import BasePrelude as Prelude
 
-import Theseus.Eff as Prelude hiding (Eff, runEff)
-import Theseus.Eff qualified as The (Eff)
-import Theseus.Effect.IO as Prelude
-import Theseus.Effect.Input as Prelude
-import Theseus.Effect.Output as Prelude
-import Theseus.Effect.State as Prelude (State, modify, runState)
-
--- import Cleff as Prelude
--- import Cleff.Fresh as Prelude
--- import Cleff.Input as Prelude
--- import Cleff.Output as Prelude
--- import Cleff.State as Prelude (State, modify, runState)
--- import Cleff.Trace as Prelude
 import Control.Applicative as Prelude
 import Control.Concurrent (newMVar, putMVar, takeMVar)
 import Control.Monad as Prelude
@@ -64,6 +51,12 @@ import Network.HTTP.Req as Prelude (
 import Numeric.Natural as Prelude
 import PyF (fmt)
 import Text.Read
+import Theseus.Eff as Prelude hiding (Eff, runEff)
+import Theseus.Eff qualified as The (Eff)
+import Theseus.Effect.IO as Prelude
+import Theseus.Effect.Input as Prelude
+import Theseus.Effect.Output as Prelude
+import Theseus.Effect.State as Prelude (State, modify, runState)
 
 deriving instance Hashable Scheme
 deriving instance Hashable (Url Https)
@@ -75,12 +68,6 @@ deriving via Generically (Url Https) instance ToJSON (Url Https)
 type Eff = The.Eff Traversable
 
 type f ~> g = forall a. f a -> g a
-type (:>) = Member
-type IOE = EIO
-
-type family effs :>> es :: Constraint where
-  '[] :>> es = ()
-  (eff : effs) :>> es = (eff :> es, effs :>> es)
 
 data MyUrl = HttpsUrl (Url Https) | MxcUrl Text
   deriving (Generic, Eq, Show, Hashable, FromJSON, ToJSON)
@@ -105,7 +92,7 @@ tshow = pack . show
 
 type Interprets e es = Eff (e : es) ~> Eff es
 
--- reinterpret :: eff `Member` es => (eff (Eff (eff : es)) ~> Eff es) -> Eff (eff : es) ~> Eff es
+-- reinterpret :: eff :> es => (eff (Eff (eff : es)) ~> Eff es) -> Eff (eff : es) ~> Eff es
 -- reinterpret f = interpret_ \eff -> f eff
 
 runOutputMonoid :: Monoid o => Eff (Output o : es) a -> Eff es (o, a)
@@ -126,10 +113,10 @@ hash = pack . show . Data.Hashable.hash
 data Fresh u :: Effect where
   Fresh :: Fresh u m u
 
-fresh :: Fresh u `Member` es => Eff es u
+fresh :: Fresh u :> es => Eff es u
 fresh = send Fresh
 
-runFreshMVar :: EIO `Member` es => Eff (Fresh Int : es) ~> Eff es
+runFreshMVar :: IOE :> es => Eff (Fresh Int : es) ~> Eff es
 runFreshMVar action = do
   counter <- liftIO $ newMVar 0
   with action $ interpret_ \Fresh -> do
@@ -137,10 +124,10 @@ runFreshMVar action = do
     liftIO $ putMVar counter $ count + 1
     pure count
 
-inputs :: Input i `Member` es => (i -> a) -> Eff es a
+inputs :: Input i :> es => (i -> a) -> Eff es a
 inputs f = fmap f input
 
-runIOE :: Eff '[EIO] ~> IO
+runIOE :: Eff '[IOE] ~> IO
 runIOE = runEffIO . unrestrict
 
 ignoreOutput :: Eff (Output o : es) ~> Eff es

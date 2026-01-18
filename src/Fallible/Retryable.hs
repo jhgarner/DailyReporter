@@ -24,7 +24,7 @@ runRetryableTimer isWorthRetrying = interpret \sender -> \case
               sender @ErrorLog $ logError [f|Failed with error: {show error}|]
               case nextAttempt of
                 Just nextAttempt -> do
-                  sender @EIO $ liftIO $ threadDelay 5000000
+                  sender @IOE $ liftIO $ threadDelay 5000000
                   nextAttempt
                 Nothing -> fallback error
           | otherwise -> do

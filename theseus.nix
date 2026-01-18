@@ -6,8 +6,8 @@ mkDerivation {
   version = "0.1.0.0";
   src = fetchgit {
     url = "https://github.com/jhgarner/Theseus.git";
-    sha256 = "0pdy5l8d6ykjv9n1pqwzjfap3y10bkdl9cz0g2qh1b4smlajj29j";
-    rev = "7a0f203bc9d5c087913a6fab3a11c1cf7da585db";
+    sha256 = "sha256-HooGluKReEwVGB+JcV5zzM9ACku94UT8ljuB7q2vMJE=";
+    rev = "0d42f255e122f41ac71e36f95b1093ff8158b8c1";
     fetchSubmodules = true;
   };
   libraryHaskellDepends = [ base mtl ];

@@ -18,9 +18,9 @@ instance [NetworkError, IOE] :>> effs => MonadHttp (Eff effs) where
 runOnInternet :: forall es. _ => Interprets Network es
 runOnInternet = interpret \sender ->
   pure . \case
-    Get url options -> getReqBody $ sender @EIO $ req GET url NoReqBody bsResponse options
-    Post url body options -> getReqBody $ sender @EIO $ req POST url body jsonResponse options
-    Put url body options -> getReqBody $ sender @EIO $ req PUT url (ReqBodyJson body) jsonResponse options
+    Get url options -> getReqBody $ sender @IOE $ req GET url NoReqBody bsResponse options
+    Post url body options -> getReqBody $ sender @IOE $ req POST url body jsonResponse options
+    Put url body options -> getReqBody $ sender @IOE $ req PUT url (ReqBodyJson body) jsonResponse options
  where
   getReqBody :: HttpResponse response => Eff effs response -> Eff effs (HttpResponseBody response)
   getReqBody = fmap responseBody
