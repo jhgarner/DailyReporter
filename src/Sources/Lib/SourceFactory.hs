@@ -13,11 +13,15 @@ import Text.URI.QQ
 
 data SourceFactory :: Effect where
   UsingHtmlUrl :: Throw SourceError :> es => Url 'Https -> Eff (ScraperEff : es) a -> SourceFactory (Eff es) a
+  UsingHtmlUrlMod :: Throw SourceError :> es => Url 'Https -> (ByteString -> ByteString) -> Eff (ScraperEff : es) a -> SourceFactory (Eff es) a
   UsingHtml :: Throw SourceError :> es => ByteString -> Eff (ScraperEff : es) a -> SourceFactory (Eff es) a
   GetJson :: FromJSON a => Url 'Https -> Option 'Https -> SourceFactory m a
 
 usingHtmlUrl :: (SourceFactory :> es, Throw SourceError :> es) => Url 'Https -> Eff (ScraperEff : es) a -> Eff es a
 usingHtmlUrl url action = send $ UsingHtmlUrl url action
+
+usingHtmlUrlMod :: (SourceFactory :> es, Throw SourceError :> es) => Url 'Https -> (ByteString -> ByteString) -> Eff (ScraperEff : es) a -> Eff es a
+usingHtmlUrlMod url mod action = send $ UsingHtmlUrlMod url mod action
 
 usingHtml :: (SourceFactory :> es, Throw SourceError :> es) => ByteString -> Eff (ScraperEff : es) a -> Eff es a
 usingHtml url action = send $ UsingHtml url action
@@ -44,6 +48,10 @@ runSourceFactory name =
     UsingHtmlUrl url action -> do
       site <- get url mempty
       let tags = parseTagsT site
+      pure $ runScraperEff tags action
+    UsingHtmlUrlMod url mod action -> do
+      site <- get url mempty
+      let tags = parseTagsT $ mod site
       pure $ runScraperEff tags action
     UsingHtml site action -> do
       pure $ runScraperEff (parseTagsT site) action
