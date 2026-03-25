@@ -7,6 +7,8 @@ some kind of schedule. I use Github actions to run it every morning.
 
 You can build the project using `nix-build` or `cabal build`. If you want a
 really fast `nix-build`, visit https://app.cachix.org/cache/jhgarner-projects.
+To build for a specific Nix platform, pass `--argstr system`, for example
+`nix-build --argstr system aarch64-linux`.
 
 When running the app, you must have an environment variable called `CONFIG` with
 the following contents:

@@ -1,3 +1,5 @@
+{ system ? builtins.currentSystem }:
+
 let
   # Read in the Niv sources
   sources = import ./nix/sources.nix {};
@@ -13,6 +15,6 @@ let
     };
   };
 
-  # Import nixpkgs and pass the haskell.nix provided nixpkgsArgs
-  pkgs = import sources.nixpkgs { };
+  # Import nixpkgs for the requested target system.
+  pkgs = import sources.nixpkgs { inherit system; };
 in haskellPackages.dailyReporter

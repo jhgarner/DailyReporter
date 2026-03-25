@@ -5,7 +5,7 @@ on:
     - cron: '0 12 * * *'
 jobs:
   tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       CONFIG: '${{ secrets.DAILY_CONFIG }}'
       NIXPKGS_ALLOW_BROKEN: 1
@@ -17,7 +17,7 @@ jobs:
     - uses: cachix/cachix-action@v15
       with:
         name: jhgarner-projects
-    - run: nix-build
+    - run: nix-build --argstr system x86_64-linux
     - run: |
         cd result
         bin/DailyReporter-exe
