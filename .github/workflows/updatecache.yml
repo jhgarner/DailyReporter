@@ -20,6 +20,7 @@ jobs:
       with:
         name: jhgarner-projects
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-    - run: nix-build --argstr system ${{ matrix.system }}
+    - run: nix-build --argstr system ${{ matrix.system }} -o result
       env:
         NIXPKGS_ALLOW_BROKEN: 1
+    - run: cachix push jhgarner-projects result
