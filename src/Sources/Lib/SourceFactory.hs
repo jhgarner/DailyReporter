@@ -5,6 +5,7 @@ import Fallible.Retryable
 import Fallible.Throwing
 import Message
 import Network.Class
+import Network.Webdriver
 import Sources.Lib.Scraper
 import Sources.Lib.SourceResult
 import Text.HTML.TagSoup.Fast
@@ -13,12 +14,16 @@ import Text.URI.QQ
 
 data SourceFactory :: Effect where
   UsingHtmlUrl :: Throw SourceError :> es => Url 'Https -> Eff (ScraperEff : es) a -> SourceFactory (Eff es) a
+  UsingWebdriver :: Throw SourceError :> es => Url 'Https -> Eff (ScraperEff : es) a -> SourceFactory (Eff es) a
   UsingHtmlUrlMod :: Throw SourceError :> es => Url 'Https -> (ByteString -> ByteString) -> Eff (ScraperEff : es) a -> SourceFactory (Eff es) a
   UsingHtml :: Throw SourceError :> es => ByteString -> Eff (ScraperEff : es) a -> SourceFactory (Eff es) a
   GetJson :: FromJSON a => Url 'Https -> Option 'Https -> SourceFactory m a
 
 usingHtmlUrl :: (SourceFactory :> es, Throw SourceError :> es) => Url 'Https -> Eff (ScraperEff : es) a -> Eff es a
 usingHtmlUrl url action = send $ UsingHtmlUrl url action
+
+usingWebdriver :: (SourceFactory :> es, Throw SourceError :> es) => Url 'Https -> Eff (ScraperEff : es) a -> Eff es a
+usingWebdriver url action = send $ UsingWebdriver url action
 
 usingHtmlUrlMod :: (SourceFactory :> es, Throw SourceError :> es) => Url 'Https -> (ByteString -> ByteString) -> Eff (ScraperEff : es) a -> Eff es a
 usingHtmlUrlMod url mod action = send $ UsingHtmlUrlMod url mod action
@@ -39,7 +44,7 @@ type SourceFactoryEnv es =
     )
 
 runSourceFactory ::
-  [Network, Retryable HttpException] :>> es =>
+  [Network, Webdriver, Retryable HttpException] :>> es =>
   Text ->
   SourceFactoryEnv es a ->
   Eff (Throw SourceError : es) [Message]
@@ -47,6 +52,10 @@ runSourceFactory name =
   collectMessages . handleNetworkErrors . interpret \sender -> \case
     UsingHtmlUrl url action -> do
       site <- get url mempty
+      let tags = parseTagsT site
+      pure $ runScraperEff tags action
+    UsingWebdriver url action -> do
+      site <- browse url
       let tags = parseTagsT site
       pure $ runScraperEff tags action
     UsingHtmlUrlMod url mod action -> do

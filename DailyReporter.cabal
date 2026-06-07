@@ -92,6 +92,7 @@ library
     Message
     Network.Class
     Network.Network
+    Network.Webdriver
     Sources.Apod
     Sources.Buttersafe
     Sources.Ec
@@ -149,6 +150,7 @@ library
     http-api-data,
     indexed-traversable,
     modern-uri,
+    monad-logger,
     mtl,
     recursion-schemes,
     req,
@@ -158,6 +160,7 @@ library
     theseus,
     time,
     unliftio,
+    webdriver,
 
   mixins:
     base hiding (Prelude)

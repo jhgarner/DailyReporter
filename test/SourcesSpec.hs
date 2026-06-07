@@ -16,6 +16,7 @@ import Fallible.Retryable
 import Fallible.Throwing
 import Network.Class
 import Network.HTTP.Req
+import Network.Webdriver
 import Sources.Apod
 import Sources.Buttersafe
 import Sources.Ec
@@ -33,13 +34,13 @@ import Test.Hspec
 spec :: Spec
 spec = traverse_ specSource allSources
 
-specSource :: Source [Input Config, Network, Retryable HttpException, IOE] -> Spec
+specSource :: Source [Input Config, Network, Webdriver, Retryable HttpException, IOE] -> Spec
 specSource Source{..} =
   describe (unpack name) $
     it "parses correctly" $
       checkSource sourceAction name
 
-checkSource :: Eff [Throw SourceError, Input Config, Network, Retryable HttpException, IOE] [Message] -> Text -> Expectation
+checkSource :: Eff [Throw SourceError, Input Config, Network, Webdriver, Retryable HttpException, IOE] [Message] -> Text -> Expectation
 checkSource action name = do
   let expectedFileName = "test/Sources/" <> name
   expected <- Data.ByteString.readFile $ unpack expectedFileName
@@ -48,12 +49,15 @@ checkSource action name = do
   Data.Text.IO.putStrLn $ decodeUtf8 $ B.toStrict $ encode actual
   Just actual `shouldBe` decodeStrict' expected
 
-fakeNetwork :: IOE :> es => Eff (Network : Retryable HttpException : es) ~> Eff es
-fakeNetwork = handleRetries . handleNetwork
+fakeNetwork :: IOE :> es => Eff (Network : Webdriver : Retryable HttpException : es) ~> Eff es
+fakeNetwork = handleRetries . handleDriver . handleNetwork
  where
   handleNetwork :: IOE :> es => Eff (Network : es) ~> Eff es
   handleNetwork = interpret_ \case
     Get url _ -> liftIO $ Data.ByteString.readFile $ unpack $ "test/Sources/" <> renderUrl url <> ".html"
+  handleDriver :: IOE :> es => Eff (Webdriver : es) ~> Eff es
+  handleDriver = interpret_ \case
+    Browse url -> liftIO $ Data.ByteString.readFile $ unpack $ "test/Sources/" <> renderUrl url <> ".html"
   handleRetries = interpret \sender -> \case
     RunWithRetries action _ -> pure $ flip fmap (runThrow action) \case
       Left e -> error $ show e

@@ -24,6 +24,7 @@ import Matrix.Debug
 import Matrix.MatrixT
 import Network.Class
 import Network.Network
+import Network.Webdriver
 import Sources.Lib.SourceFactory
 import Sources.Lib.SourceResult
 import Sources.Sources
@@ -45,6 +46,7 @@ runEff =
     . runRetryableTimer isRecoverable
     . runRetryableTimer @SourceError (const False)
     . runOnInternet
+    . runChrome
     -- Uncomment this line to us a fake matrix effect
     -- . runDebugMatrix
     -- Uncomment this line to login to matrix and run a real version

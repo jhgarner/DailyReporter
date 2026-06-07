@@ -4,7 +4,7 @@ import Sources.Lib
 
 word :: _ => Source es
 word = makeSource "Word" do
-  usingHtmlUrl home do
+  usingWebdriver home do
     getText `on` "h2" `withClass` "word-header-txt" >>= makeTitle home
 
     partOfSpeech <- getText `on` "span" `withClass` "main-attr"
